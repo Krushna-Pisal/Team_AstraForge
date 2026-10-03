@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import ProductSimulator from "./pages/ProductSimulator";
 import ConfigureELN from "./pages/ConfigureELN";
 import ConfigureDCD from "./pages/ConfigureDCD";
+import DcdConfigure from "./pages/dcd/DcdConfigure";
 import ConfigureCPN from "./pages/ConfigureCPN";
 import CpnConfigure from "./pages/cpn/CpnConfigure";
 import ClientProfile from "./pages/ClientProfile";
@@ -30,7 +31,7 @@ export default function App() {
             <Route path="simulator">
               <Route index element={<ProductSimulator />} />
               <Route path="eln" element={<ConfigureELN />} />
-              <Route path="dcd" element={<ConfigureDCD />} />
+              <Route path="dcd" element={<DcdConfigure />} />
               <Route path="cpn" element={<CpnConfigure />} />
               <Route path="investment" element={<Investment />} />
               <Route
