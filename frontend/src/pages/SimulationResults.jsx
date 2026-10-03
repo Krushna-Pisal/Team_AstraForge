@@ -14,9 +14,6 @@ import PayoffChart from "../components/PayoffChart";
 import ScenarioCards from "../components/ScenarioCards";
 import CpnResultsView from "../components/cpn/CpnResultsView";
 import DcdResultsView from "../components/dcd/DcdResultsView";
-import MarketMovementControl from "../components/simulation/MarketMovementControl";
-import ResultValueToggle from "../components/simulation/ResultValueToggle";
-import HistoricalPriceChart from "../components/simulation/HistoricalPriceChart";
 
 export default function SimulationResults() {
   const { state, dispatch } = useAssessment();
@@ -24,8 +21,6 @@ export default function SimulationResults() {
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [tab, setTab] = useState("scenarios");
-  const [valueMode, setValueMode] = useState("percentage");
-  const [shock, setShock] = useState(0);
   useEffect(() => {
     if (!product || simulation) return;
     const controller = new AbortController();
@@ -50,6 +45,7 @@ export default function SimulationResults() {
         action="Choose a product"
       />
     );
+
   if (product.type === "CPN") {
     const cfg = product.config || {};
     const extras =
@@ -205,18 +201,13 @@ export default function SimulationResults() {
                 <p className="eyebrow">PAYOFF PROFILE</p>
                 <h2>Market movement, investor outcome</h2>
               </div>
-              <ResultValueToggle value={valueMode} onChange={setValueMode}/>
+              <span className="badge">{product.type}</span>
             </div>
             <PayoffChart
               curve={simulation.curve.results.map((r) => ({
-                ...r,
                 underlying_return_pct: r.scenario_shock_pct,
                 investor_return_pct: r.return_pct,
               }))}
-              mode={valueMode}
-              currency={currency}
-              investment={investment}
-              selectedShock={shock}
               strikePct={
                 product.type === "ELN"
                   ? product.config.strike_pct
@@ -237,8 +228,6 @@ export default function SimulationResults() {
             />
             <p className="muted small">{simulation.curve.assumptions}</p>
           </section>
-          <MarketMovementControl product={product} shock={shock} onChange={setShock} mode={valueMode}/>
-          <HistoricalPriceChart ticker={product.ticker}/>
           {product.type === "DCD" && (
             <section className="card section-card">
               <h2>Actual settlement legs · illustrative maturity</h2>
