@@ -11,6 +11,7 @@ const items = [
   ["/", "Overview", LayoutDashboard],
   ["/clients", "Customer details", UserRound],
   ["/simulator", "Saved products", Layers],
+  ["/discovery", "Find matching products", Layers],
   ["/history", "Assessment history", History],
   ["/reports", "Reports", FileText],
 ];

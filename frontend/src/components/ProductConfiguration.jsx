@@ -58,7 +58,8 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
     const controller = new AbortController();
     api(
       "/api/market-data/history?ticker=" +
-        encodeURIComponent(underlying.ticker),
+        encodeURIComponent(underlying.ticker) +
+        "&source=online",
       { signal: controller.signal },
     )
       .then((data) => {
@@ -125,7 +126,7 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
         type: "save_product",
         value: { id: edit?.id || crypto.randomUUID(), ...result },
       });
-      navigate("/simulator");
+      navigate(e.nativeEvent.submitter?.value === "use" ? "/simulator/investment" : "/simulator");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -325,6 +326,7 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
         </p>
         <ErrorNotice error={error} />
         <div className="actions">
+          {state.client?.proposed_investment_amount && <button type="submit" value="use" className="btn-secondary" disabled={busy || !market}>Save & use for this customer</button>}
           <Link to="/simulator" className="btn-secondary">
             Back to products
           </Link>

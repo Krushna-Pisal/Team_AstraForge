@@ -45,7 +45,9 @@ class ProductRiskCharacteristics(BaseModel):
     # DCD specific
     currency_conversion_risk: bool = False
     # Metrics from Phase 3 backtest
+    stress_loss_pct: Optional[float] = Field(None, ge=0, le=100)
     historical_worst_loss_pct: Optional[float] = Field(None, ge=0, le=100)
+    assessed_loss_pct: Optional[float] = Field(None, ge=0, le=100)
     
 class DimensionResult(BaseModel):
     dimension: str

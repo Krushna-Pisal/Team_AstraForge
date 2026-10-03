@@ -79,13 +79,13 @@ export default function ClientProfile() {
         ),
       },
     });
-    navigate(state.selectedProductId ? "/simulator/investment" : "/simulator");
+    navigate("/simulator/budget");
   }
   return (
     <div className="page-stack">
       <PageTitle
         title="Customer details"
-        description="Answer six short questions. Enter the investment amount after choosing a product."
+        description="Answer six short questions, then enter the amount once before choosing or discovering products."
       />
       <Steps current={0} />
       <form className="page-stack" onSubmit={submit}>

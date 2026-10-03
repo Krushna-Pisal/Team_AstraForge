@@ -46,7 +46,8 @@ def profile(**changes):
 def risk(**changes):
     data = dict(product_type="ELN", product_reference="ELN-1", tenor_years=1, underlying_asset="^NSEI",
         issuer="Illustrative", max_contractual_loss_pct=100, principal_protection_pct=0,
-        coupon_pct_pa=12, upside_participation=False)
+        coupon_pct_pa=12, upside_participation=False, stress_loss_pct=30,
+        assessed_loss_pct=30)
     return ProductRiskCharacteristics(**(data | changes))
 
 

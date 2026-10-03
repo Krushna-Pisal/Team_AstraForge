@@ -10,12 +10,16 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { pct } from "../lib/api";
+import { pct, money } from "../lib/api";
 export default function PayoffChart({
   curve,
   strikePct,
   barrierPct,
   protectionPct,
+  mode = "percentage",
+  currency = "INR",
+  investment,
+  selectedShock,
 }) {
   return (
     <div
@@ -36,7 +40,7 @@ export default function PayoffChart({
           <XAxis
             dataKey="underlying_return_pct"
             type="number"
-            domain={[-90, 80]}
+            domain={["dataMin", "dataMax"]}
             tickFormatter={(v) => v + "%"}
             stroke="#8b9ab0"
             fontSize={11}
@@ -49,7 +53,7 @@ export default function PayoffChart({
             }}
           />
           <YAxis
-            tickFormatter={(v) => v + "%"}
+            tickFormatter={(v) => mode === "money" ? new Intl.NumberFormat("en-IN",{notation:"compact"}).format(v) : v + "%"}
             stroke="#8b9ab0"
             fontSize={11}
             width={56}
@@ -61,11 +65,13 @@ export default function PayoffChart({
               borderRadius: 10,
               color: "#e7edf7",
             }}
-            formatter={(v) => pct(v)}
+            formatter={(v) => mode === "money" ? money(v,currency) : pct(v)}
             labelFormatter={(v) => "Underlying: " + pct(v)}
           />
           <Legend verticalAlign="top" height={32} />
-          <ReferenceArea y1={-100} y2={0} fill="#df806d" fillOpacity={0.045} />
+          {mode === "percentage" && <ReferenceArea y1={-100} y2={0} fill="#df806d" fillOpacity={0.045} />}
+          {selectedShock != null && <ReferenceLine x={selectedShock} stroke="#f1cd90" label={{value:"Selected",fill:"#f1cd90"}}/>}
+          {mode === "money" && <ReferenceLine y={investment} stroke="#7ebaa3" label={{value:"Invested",fill:"#7ebaa3"}}/>}
           <ReferenceLine y={0} stroke="#69788d" />
           {strikePct != null && (
             <ReferenceLine
@@ -83,7 +89,7 @@ export default function PayoffChart({
               label={{ value: "Barrier", fill: "#e2a66d", fontSize: 11 }}
             />
           )}
-          {protectionPct != null && (
+          {protectionPct != null && mode === "percentage" && (
             <ReferenceLine
               y={protectionPct - 100}
               stroke="#9eafc5"
@@ -96,14 +102,15 @@ export default function PayoffChart({
             />
           )}
           <Line
-            name="Investor return"
+            name={mode === "money" ? "Maturity value ("+currency+")" : "Investor return"}
             type="linear"
-            dataKey="investor_return_pct"
+            dataKey={mode === "money" ? "maturity_value" : "investor_return_pct"}
             stroke="#9abada"
             strokeWidth={2.5}
             dot={false}
             animationDuration={350}
           />
+          {mode === "money" && <Line name={"Profit / loss ("+currency+")"} type="linear" dataKey="profit_loss" stroke="#8bbca9" dot={false} animationDuration={350}/>}
         </LineChart>
       </ResponsiveContainer>
     </div>

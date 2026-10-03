@@ -122,7 +122,7 @@ export default function SuitabilityResults() {
                         investment_horizon: "Investment period",
                         loss_tolerance: "Acceptable loss",
                         portfolio_concentration: "Share of total investments",
-                        liquidity: "Access to money",
+                        liquidity: "Access to your money",
                         investment_objective: "Investment goal",
                       }[check.type]
                     }
@@ -147,6 +147,42 @@ export default function SuitabilityResults() {
                           {JSON.stringify(check.product_value) ?? "Missing"}
                         </strong>
                       </span>
+                      {check.type === "loss_tolerance" && (
+                        <>
+                          <span>
+                            Assessed downside{" "}
+                            <strong>
+                              {evaluation.product_risk.assessed_loss_pct == null
+                                ? "Missing"
+                                : evaluation.product_risk.assessed_loss_pct + "%"}
+                            </strong>
+                          </span>
+                          <span>
+                            Stress-scenario loss{" "}
+                            <strong>
+                              {evaluation.product_risk.stress_loss_pct == null
+                                ? "Missing"
+                                : evaluation.product_risk.stress_loss_pct + "%"}
+                            </strong>
+                          </span>
+                          <span>
+                            Historical worst observed loss{" "}
+                            <strong>
+                              {evaluation.product_risk.historical_worst_loss_pct == null
+                                ? "Missing"
+                                : evaluation.product_risk.historical_worst_loss_pct + "%"}
+                            </strong>
+                          </span>
+                          <span>
+                            Contractual maximum loss{" "}
+                            <strong>
+                              {evaluation.product_risk.max_contractual_loss_pct == null
+                                ? "Missing"
+                                : evaluation.product_risk.max_contractual_loss_pct + "%"}
+                            </strong>
+                          </span>
+                        </>
+                      )}
                     </div>
                     <code>{check.reason_code}</code>
                   </details>
@@ -176,7 +212,8 @@ export default function SuitabilityResults() {
             <Link className="btn-secondary" to="/simulator/results">
               Back to simulation
             </Link>
-            <button className="btn-primary" onClick={save}>
+            <Link className="btn-primary" to="/simulator/insights">Give Insights →</Link>
+            <button className="btn-secondary" onClick={save}>
               Save assessment to session →
             </button>
           </div>

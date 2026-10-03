@@ -32,6 +32,10 @@ app = FastAPI(
     responses={status: {"model": ErrorResponse} for status in (422, 404, 500, 503)},
 )
 install_error_handlers(app)
+from app.discovery.discovery_service import router as discovery_router
+from app.agents.insights_agent import router as insights_router
+app.include_router(discovery_router)
+app.include_router(insights_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -137,8 +141,8 @@ from app.phase3_market_data import get_historical_market_data
 from typing import Any
 
 @app.get("/api/market-data/history", response_model=MarketHistory, tags=["market"])
-def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> MarketHistory:
-    return get_market_data(ticker, period)
+def get_market_history(ticker: str = "^NSEI", period: str = "10y", source: str = "snapshot", refresh: bool = False) -> MarketHistory:
+    return get_market_data(ticker, period, source, refresh)
 
 
 @app.get("/api/market-data/catalog", response_model=list[MarketInstrument], tags=["market"])

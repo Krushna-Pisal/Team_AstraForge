@@ -45,6 +45,7 @@ class MarketHistory(DomainModel):
     warnings: list[str]
     prices: list[PricePoint]
     instrument: MarketInstrument | None = None
+    cache_status: Literal["fresh", "cached", "stale", "snapshot"] = "snapshot"
 
 
 class SearchResult(DomainModel):
@@ -183,12 +184,17 @@ def _fetch_fx(ticker: str, period: str, cache_hour: int) -> pd.DataFrame:
         raise DomainError("MARKET_DATA_UNAVAILABLE", "The market-data provider is unavailable. Retry later.", 503) from exc
 
 
-def get_historical_market_data(ticker: str = "^NSEI", period: str = "10y") -> pd.DataFrame:
+def get_historical_market_data(ticker: str = "^NSEI", period: str = "10y", source: str = "snapshot", refresh: bool = False) -> pd.DataFrame:
     ticker = validate_ticker(ticker)
     get_instrument(ticker)
     if period not in PERIODS:
         raise DomainError("INVALID_PERIOD", "Supported periods are 1mo, 1y, 5y and 10y.")
-    if ticker == "^NSEI":
+    if source not in ("online", "snapshot"):
+        raise DomainError("INVALID_SOURCE", "Choose online or snapshot market data.")
+    effective_source = source
+    if effective_source == "snapshot" and ticker != "^NSEI":
+        effective_source = "online"
+    if effective_source == "snapshot":
         try:
             result = clean_prices(pd.read_csv(DATA_PATH))
         except DomainError:
@@ -199,20 +205,31 @@ def get_historical_market_data(ticker: str = "^NSEI", period: str = "10y") -> pd
         cutoff = pd.Timestamp(result["date"].iloc[-1]) - pd.Timedelta(days=PERIODS[period])
         result = result[result["date"] >= cutoff.strftime("%Y-%m-%d")].copy()
     else:
-        result = _fetch_fx(ticker, period, int(datetime.now(timezone.utc).timestamp() // 3600)).copy()
+        from app.online_market import online_prices
+        result = online_prices(ticker, period, refresh)
     return result
 
 
-def get_market_data(ticker: str = "^NSEI", period: str = "10y") -> MarketHistory:
+def get_market_data(ticker: str = "^NSEI", period: str = "10y", source: str = "snapshot", refresh: bool = False) -> MarketHistory:
     ticker = validate_ticker(ticker)
     instrument = get_instrument(ticker)
-    df = get_historical_market_data(ticker, period)
+    if source not in ("online", "snapshot"):
+        raise DomainError("INVALID_SOURCE", "Choose online or snapshot market data.")
+    effective_source = source
+    if effective_source == "snapshot" and ticker != "^NSEI":
+        effective_source = "online"
+    df = get_historical_market_data(ticker, period, effective_source, refresh)
     warnings = ["Daily close observations only; prices are not live executable quotes."]
-    if ticker == "^NSEI":
+    status = df.attrs.get("cache_status", "snapshot")
+    if status == "stale":
+        warnings.append("Live market data unavailable. Showing cached data from " + df["date"].iloc[-1] + ".")
+    elif status == "cached":
+        warnings.append("Showing cached Yahoo observations; use Refresh market data to request an update.")
+    if effective_source == "snapshot":
         warnings.append("Bundled snapshot; original provenance is unverified. Do not treat it as a live market feed.")
     return MarketHistory(ticker=ticker, source=df.attrs["source"], as_of=df["date"].iloc[-1],
         fetched_at=df.attrs["fetched_at"], count=len(df), latest_price=float(df["close"].iloc[-1]),
-        currency=instrument.currency, instrument=instrument, warnings=warnings, prices=df.to_dict("records"))
+        currency=instrument.currency, instrument=instrument, warnings=warnings, prices=df.to_dict("records"), cache_status=status)
 
 
 def get_latest_price(ticker: str = "^NSEI") -> float:

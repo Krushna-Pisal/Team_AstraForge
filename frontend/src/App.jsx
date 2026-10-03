@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./features.css";
 import MainLayout from "./components/layout/MainLayout";
 import { AssessmentProvider } from "./state/AssessmentContext";
 import { lazy, Suspense } from "react";
@@ -12,6 +13,8 @@ import ConfigureDCD from "./pages/ConfigureDCD";
 import ConfigureCPN from "./pages/ConfigureCPN";
 import ClientProfile from "./pages/ClientProfile";
 import Investment from "./pages/Investment";
+import InvestmentPlan from "./pages/InvestmentPlan";
+import Insights from "./pages/Insights";
 const SimulationResults = lazy(() => import("./pages/SimulationResults"));
 import SuitabilityResults from "./pages/SuitabilityResults";
 import ProductDiscovery from "./pages/ProductDiscovery";
@@ -32,6 +35,8 @@ export default function App() {
               <Route path="dcd" element={<ConfigureDCD />} />
               <Route path="cpn" element={<ConfigureCPN />} />
               <Route path="investment" element={<Investment />} />
+              <Route path="budget" element={<InvestmentPlan />} />
+              <Route path="insights" element={<Insights />} />
               <Route
                 path="client"
                 element={<ClientProfile flow="simulator" />}

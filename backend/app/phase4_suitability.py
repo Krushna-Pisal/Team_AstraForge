@@ -93,33 +93,45 @@ def evaluate_loss_tolerance(client: ClientProfile, product: ProductRiskCharacter
             explanation="Client max acceptable loss is not provided."
         )
         
-    worst_loss = None
-    if product.max_contractual_loss_pct is not None:
-        worst_loss = product.max_contractual_loss_pct
-    if product.historical_worst_loss_pct is not None:
-        if worst_loss is None or product.historical_worst_loss_pct > worst_loss:
-            worst_loss = product.historical_worst_loss_pct
-            
-    if worst_loss is None:
+    assessed_loss = product.assessed_loss_pct
+    if assessed_loss is None:
         return DimensionResult(
             dimension="LOSS_TOLERANCE",
             status="INSUFFICIENT_DATA",
-            relevant_input_values={"client_tolerance": client.max_acceptable_loss_pct},
-            rule_applied="Worst potential loss <= Client Max Tolerance",
-            explanation="Product contractual downside or historical worst loss is unknown. Cannot accurately assess loss tolerance."
+            relevant_input_values={
+                "client_tolerance": client.max_acceptable_loss_pct,
+                "stress_loss_pct": product.stress_loss_pct,
+                "historical_worst_loss_pct": product.historical_worst_loss_pct,
+                "max_contractual_loss_pct": product.max_contractual_loss_pct,
+            },
+            rule_applied="Assessed downside (stress or historical) <= Client Max Tolerance",
+            explanation="Modeled stress and historical downside evidence are unavailable. Cannot accurately assess loss tolerance; contractual maximum loss is not used as a substitute."
         )
         
-    status = "PASS" if worst_loss <= client.max_acceptable_loss_pct else "MISMATCH"
-    explanation = f"Assessed worst loss is {worst_loss}%. Client tolerance is {client.max_acceptable_loss_pct}%."
-    if status == "MISMATCH":
-        explanation += " The assessed potential loss exceeds the client's stated tolerance."
-    explanation += " Note: Historical worst loss is not the maximum possible future loss."
+    status = "PASS" if assessed_loss <= client.max_acceptable_loss_pct else "MISMATCH"
+    comparison = "within" if status == "PASS" else "exceeds"
+    explanation = (
+        f"Assessed downside of {assessed_loss:.1f}% is {comparison} the client's "
+        f"stated maximum acceptable loss of {client.max_acceptable_loss_pct:.1f}%."
+    )
+    if product.max_contractual_loss_pct is not None and product.max_contractual_loss_pct > client.max_acceptable_loss_pct:
+        explanation += (
+            f" Separate contractual tail-risk disclosure: the theoretical contractual maximum "
+            f"loss is {product.max_contractual_loss_pct:.1f}%, above the client's stated tolerance."
+        )
+    explanation += " Historical worst observed loss is not the maximum possible future loss."
     
     return DimensionResult(
         dimension="LOSS_TOLERANCE",
         status=status,
-        relevant_input_values={"worst_loss_evaluated": worst_loss, "client_tolerance": client.max_acceptable_loss_pct},
-        rule_applied="Worst potential loss <= Client Max Tolerance",
+        relevant_input_values={
+            "assessed_loss_pct": assessed_loss,
+            "stress_loss_pct": product.stress_loss_pct,
+            "historical_worst_loss_pct": product.historical_worst_loss_pct,
+            "max_contractual_loss_pct": product.max_contractual_loss_pct,
+            "client_tolerance": client.max_acceptable_loss_pct,
+        },
+        rule_applied="Assessed downside (max of stress and historical loss) <= Client Max Tolerance",
         explanation=explanation
     )
 
