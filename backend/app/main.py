@@ -197,3 +197,7 @@ def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+# --- Phase 5 Endpoints ---
+from app.phase5_explanation.router import router as phase5_router
+app.include_router(phase5_router)
