@@ -1,20 +1,34 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppWorkflow } from '../AppContext';
+
+const defaults = {
+  underlying: 'NIFTY50',
+  investment: 1000000,
+  tenor_years: 3,
+  protection_level: 100,
+  participation_rate: 70,
+  return_cap: 15,
+  optional_coupon: 0,
+  issuer: 'Top Tier Bank',
+  settlement_method: 'cash'
+};
 
 export default function ConfigureCPN() {
-  const [product, setProduct] = useState({
-    underlying: 'NIFTY50',
-    investment: 1000000,
-    tenor_years: 3,
-    protection_level: 100,
-    participation_rate: 70,
-    return_cap: 15,
-    optional_coupon: 0,
-    issuer: 'Top Tier Bank',
-    settlement_method: 'cash'
+  const { workflowState, updateWorkflow } = useAppWorkflow();
+  const [product, setProduct] = useState(() => {
+    if (workflowState?.product?.product_type === 'CPN') {
+      return workflowState.product;
+    }
+    return defaults;
   });
   const navigate = useNavigate();
   const set = (k, v) => setProduct(prev => ({...prev, [k]: v}));
+
+  const handleNext = () => {
+    updateWorkflow('product', { ...product, product_type: 'CPN' });
+    navigate('/simulator/client');
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -63,7 +77,7 @@ export default function ConfigureCPN() {
 
       <div className="flex justify-between">
         <button className="btn-secondary" onClick={() => navigate('/simulator')}>Cancel</button>
-        <button className="btn-primary" onClick={() => navigate('/simulator/client')}>Next: Client Profile</button>
+        <button className="btn-primary" onClick={handleNext}>Next: Client Profile</button>
       </div>
     </div>
   );
