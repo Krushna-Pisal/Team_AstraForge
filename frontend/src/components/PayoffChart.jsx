@@ -21,9 +21,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   const val = payload[0]?.value;
   return (
-    <div className="custom-tooltip">
-      <div className="custom-tooltip-label">Underlying: {label > 0 ? '+' : ''}{label}%</div>
-      <div className="custom-tooltip-value">
+    <div className="bg-slate-900 border border-slate-700 text-white rounded shadow-lg p-2 text-xs">
+      <div className="mb-1 text-slate-400">Underlying: {label > 0 ? '+' : ''}{label}%</div>
+      <div className="font-semibold text-brand-light">
         Investor: {val >= 0 ? '+' : ''}{val?.toFixed(2)}%
       </div>
     </div>
@@ -32,11 +32,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function PayoffChart({ curve, strikePct, barrierPct }) {
   if (!curve || curve.length === 0) {
-    return <div className="loading-shimmer" />;
+    return <div className="h-80 bg-slate-100 animate-pulse rounded-lg" />;
   }
 
   return (
-    <div className="chart-wrapper fade-in">
+    <div className="w-full">
       <ResponsiveContainer width="100%" height={340}>
         <LineChart
           data={curve}

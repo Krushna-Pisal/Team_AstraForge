@@ -13,7 +13,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.models import ProductInput, PayoffResponse, PriceInfo
 from app.market_data import get_price_info, get_s0
 from app.payoff_engine import build_payoff_curve, run_scenarios, get_formula_text, DEFAULT_SHOCKS
-
+from app.phase2_models import (
+    ElnPayoffRequest, ElnPayoffResponse,
+    DcdPayoffRequest, DcdPayoffResponse,
+    CpnPayoffRequest, CpnPayoffResponse
+)
+from app.phase2_engines import calculate_eln_payoff, calculate_dcd_payoff, calculate_cpn_payoff
 app = FastAPI(
     title="Suitability-Aware Payoff Simulator",
     description="Payoff simulation API for Structured Investment Products (Phase 0 – ELN only)",
@@ -101,3 +106,40 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
         ],
         formula_text=formula_text,
     )
+
+@app.post("/api/payoff/eln", response_model=ElnPayoffResponse, tags=["payoff", "phase2"])
+def compute_eln_api(req: ElnPayoffRequest) -> ElnPayoffResponse:
+    """Compute ELN payoff for a specific final outcome."""
+    return calculate_eln_payoff(req)
+
+@app.post("/api/payoff/dcd", response_model=DcdPayoffResponse, tags=["payoff", "phase2"])
+def compute_dcd_api(req: DcdPayoffRequest) -> DcdPayoffResponse:
+    """Compute DCD payoff for a specific final outcome."""
+    return calculate_dcd_payoff(req)
+
+@app.post("/api/payoff/cpn", response_model=CpnPayoffResponse, tags=["payoff", "phase2"])
+def compute_cpn_api(req: CpnPayoffRequest) -> CpnPayoffResponse:
+    """Compute CPN payoff for a specific final outcome."""
+    return calculate_cpn_payoff(req)
+
+# --- Phase 3 Endpoints ---
+from app.phase3_sim_models import ScenarioRequest, ScenarioResponse, BacktestRequest, BacktestResponse
+from app.phase3_simulation import simulate_scenarios, run_backtest
+from app.phase3_market_data import get_historical_market_data
+from typing import Any
+
+@app.get("/api/market-data/history", tags=["market", "phase3"])
+def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> list[dict[str, Any]]:
+    """Retrieve historical market data using yfinance."""
+    df = get_historical_market_data(ticker, period)
+    return df.to_dict(orient="records")
+
+@app.post("/api/scenarios/simulate", response_model=ScenarioResponse, tags=["simulation", "phase3"])
+def simulate_scenarios_api(req: ScenarioRequest) -> ScenarioResponse:
+    """Run hypothetical scenarios for a configured product."""
+    return simulate_scenarios(req)
+
+@app.post("/api/backtest/run", response_model=BacktestResponse, tags=["backtest", "phase3"])
+def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
+    """Run historical rolling-window backtest on real market data paths."""
+    return run_backtest(req)
