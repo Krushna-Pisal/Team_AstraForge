@@ -143,3 +143,12 @@ def simulate_scenarios_api(req: ScenarioRequest) -> ScenarioResponse:
 def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
     """Run historical rolling-window backtest on real market data paths."""
     return run_backtest(req)
+
+# --- Phase 4 Endpoints ---
+from app.phase4_models import SuitabilityRequest, SuitabilityResponse
+from app.phase4_suitability import run_suitability_assessment
+
+@app.post("/api/suitability/check", response_model=SuitabilityResponse, tags=["suitability", "phase4"])
+def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
+    """Evaluate client suitability against product risk characteristics."""
+    return run_suitability_assessment(req)
