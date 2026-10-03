@@ -188,3 +188,7 @@ from app.phase4_suitability import run_suitability_assessment
 def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
     return run_suitability_assessment(req)
+
+# --- CPN Endpoints ---
+from app.cpn.router import router as cpn_router
+app.include_router(cpn_router)
