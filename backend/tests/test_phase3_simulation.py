@@ -35,7 +35,7 @@ def test_simulate_scenarios_eln():
 def test_simulate_scenarios_cpn():
     cpn_cfg = CpnPayoffRequest(
         investment=100_000, initial_price=100, final_price=100,
-        protection_pct=100, participation_rate=80, upside_cap_pct=15,
+        protection_pct=100, participation_rate=100, upside_cap_pct=15,
         coupon_rate=None, tenor_years=1
     )
     req = ScenarioRequest(
