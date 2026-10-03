@@ -75,8 +75,8 @@ def test_run_backtest(mock_get_data):
     
     res = run_backtest(req)
     
-    # 504 days - 252 days window + 1 = 253 windows
-    assert res.metrics.total_windows == 253
+    # 252 trading intervals require 253 observations: 504 - 252 = 252 windows.
+    assert res.metrics.total_windows == 252
     # Check that there are barrier breaches
     assert res.metrics.barrier_breaches > 0
     assert 0 <= res.metrics.barrier_breach_freq_pct <= 100

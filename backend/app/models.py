@@ -5,7 +5,8 @@ Pydantic models for the Structured Investment Product Payoff Simulator.
 from __future__ import annotations
 
 from typing import Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
+from app.domain import DomainModel as BaseModel
 
 
 VALID_UNDERLYINGS = ["NIFTY50"]

@@ -9,6 +9,12 @@ from __future__ import annotations
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.domain import ErrorResponse
+from app.errors import install_error_handlers
+from app.phase3_market_data import get_market_data, MarketHistory, MarketInstrument, MARKETS
+from app.services import SimulationRequest, SimulationBundle, EvaluateRequest, EvaluationBundle, run_simulation, evaluate_client
+from app.phase3_market_data import SearchResponse, search_underlyings
+from app.products import ProductTemplate, ValidatedProduct, PrepareProductRequest, PreparedProduct, validate_product, prepare_product
 
 from app.models import ProductInput, PayoffResponse, PriceInfo
 from app.market_data import get_price_info, get_s0
@@ -21,9 +27,11 @@ from app.phase2_models import (
 from app.phase2_engines import calculate_eln_payoff, calculate_dcd_payoff, calculate_cpn_payoff
 app = FastAPI(
     title="Suitability-Aware Payoff Simulator",
-    description="Payoff simulation API for Structured Investment Products (Phase 0 – ELN only)",
-    version="0.1.0",
+    description="Deterministic ELN, DCD and CPN payoff, historical analysis and suitability. Percentages use percentage points.",
+    version="1.0.0",
+    responses={status: {"model": ErrorResponse} for status in (422, 404, 500, 503)},
 )
+install_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,13 +50,13 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/underlyings", tags=["market"])
+@app.get("/underlyings", tags=["legacy"], deprecated=True)
 def list_underlyings() -> list[str]:
     """Return the list of supported underlyings."""
     return ["NIFTY50"]
 
 
-@app.get("/prices/{underlying}", response_model=PriceInfo, tags=["market"])
+@app.get("/prices/{underlying}", response_model=PriceInfo, tags=["legacy"], deprecated=True)
 def get_prices(underlying: str) -> PriceInfo:
     """
     Return price metadata for a given underlying.
@@ -64,7 +72,7 @@ def get_prices(underlying: str) -> PriceInfo:
     return PriceInfo(**info)
 
 
-@app.post("/payoff", response_model=PayoffResponse, tags=["payoff"])
+@app.post("/payoff", response_model=PayoffResponse, tags=["legacy"], deprecated=True)
 def compute_payoff_api(product: ProductInput) -> PayoffResponse:
     """
     Compute the ELN payoff curve and scenario table.
@@ -128,11 +136,39 @@ from app.phase3_simulation import simulate_scenarios, run_backtest
 from app.phase3_market_data import get_historical_market_data
 from typing import Any
 
-@app.get("/api/market-data/history", tags=["market", "phase3"])
-def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> list[dict[str, Any]]:
-    """Retrieve historical market data using yfinance."""
-    df = get_historical_market_data(ticker, period)
-    return df.to_dict(orient="records")
+@app.get("/api/market-data/history", response_model=MarketHistory, tags=["market"])
+def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> MarketHistory:
+    return get_market_data(ticker, period)
+
+
+@app.get("/api/market-data/catalog", response_model=list[MarketInstrument], tags=["market"])
+def get_market_catalog() -> list[MarketInstrument]:
+    return [{"ticker": key, **value} for key, value in MARKETS.items()]
+
+
+@app.get("/api/market-data/search", response_model=SearchResponse, tags=["market"])
+def search_market_symbols(q: str = "", kind: str = "equity"):
+    return search_underlyings(q, kind)
+
+
+@app.post("/api/products/validate", response_model=ValidatedProduct, tags=["products"])
+def validate_product_template(req: ProductTemplate):
+    return validate_product(req)
+
+
+@app.post("/api/products/prepare", response_model=PreparedProduct, tags=["products"])
+def prepare_saved_product(req: PrepareProductRequest):
+    return prepare_product(req)
+
+
+@app.post("/api/simulation/run", response_model=SimulationBundle, tags=["services"])
+def simulation_bundle(req: SimulationRequest):
+    return run_simulation(req)
+
+
+@app.post("/api/suitability/evaluate", response_model=EvaluationBundle, tags=["services"])
+def evaluate_configured_product(req: EvaluateRequest):
+    return evaluate_client(req)
 
 @app.post("/api/scenarios/simulate", response_model=ScenarioResponse, tags=["simulation", "phase3"])
 def simulate_scenarios_api(req: ScenarioRequest) -> ScenarioResponse:

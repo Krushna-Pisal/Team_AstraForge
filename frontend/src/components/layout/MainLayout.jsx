@@ -1,15 +1,22 @@
-import { Outlet } from 'react-router-dom';
-import AppSidebar from './AppSidebar';
-import TopNavbar from './TopNavbar';
+import { Outlet, useLocation } from "react-router-dom";
+import AppSidebar from "./AppSidebar";
+import TopNavbar from "./TopNavbar";
 
 export default function MainLayout() {
+  const location = useLocation();
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="app-shell">
       <AppSidebar />
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="workspace">
         <TopNavbar />
-        <main className="flex-1 overflow-y-auto p-8">
-          <Outlet />
+        <main id="main-content">
+          <div key={location.pathname} className="page-enter">
+            <Outlet />
+          </div>
+          <footer>
+            Illustrative contract analysis · Historical outcomes are not
+            predictions · Subject to issuer credit risk
+          </footer>
         </main>
       </div>
     </div>

@@ -10,11 +10,22 @@ def calculate_eln_payoff(req: ElnPayoffRequest) -> ElnPayoffResponse:
     
     coupon = req.investment * (req.coupon_pct_pa / 100.0) * req.tenor_years
 
-    if not req.barrier_breached and req.final_price >= strike_price:
+    if req.barrier_monitoring == "maturity":
+        breached = req.final_price <= barrier_price
+    elif req.observed_prices is not None:
+        breached = min(req.observed_prices) <= barrier_price
+    else:
+        breached = bool(req.barrier_breached) or req.final_price <= barrier_price
+
+    if req.contract_variant == "unconditional_strike":
+        principal_repayment = req.investment if not breached or req.final_price >= strike_price else req.investment * req.final_price / strike_price
+        coupon_earned = coupon
+        explanation = "Unconditional coupon; principal returned unless barrier breached and maturity below strike. Breached downside is normalized to strike."
+    elif not breached and req.final_price >= strike_price:
         principal_repayment = req.investment
         coupon_earned = coupon
         explanation = "Barrier never breached and final price >= strike. Full principal returned + coupon."
-    elif not req.barrier_breached and req.final_price < strike_price:
+    elif not breached and req.final_price < strike_price:
         principal_repayment = req.investment
         coupon_earned = 0.0
         explanation = "Barrier never breached and final price < strike. Full principal returned, but no coupon."
@@ -28,14 +39,17 @@ def calculate_eln_payoff(req: ElnPayoffRequest) -> ElnPayoffResponse:
     pnl = total_value - req.investment
     ret_pct = (pnl / req.investment) * 100.0
 
-    assumptions = "Illustrative ELN contract. Coupon is contingent on no barrier breach in scenario B/C (diverges from unconditional coupon). Barrier monitoring and settlement methods are accepted but only barrier_breached status drives the payout logic."
+    assumptions = ("Illustrative cash-settled ELN. Contract: " + req.contract_variant + ". "
+        + ("Coupon is unconditional; breached principal uses final/strike with recovery capped at original principal." if req.contract_variant == "unconditional_strike" else "Coupon only when no breach and maturity at/above strike. After breach principal = investment * final/initial, including recovery above initial.")
+        + " Exact barrier touch breaches. Daily observations use closing prices, not intraday lows. Excludes issuer default, fees and taxes.")
 
     return ElnPayoffResponse(
         initial_price=req.initial_price,
         final_price=req.final_price,
         strike_price=strike_price,
         barrier_price=barrier_price,
-        barrier_breached=req.barrier_breached,
+        barrier_breached=breached,
+        contract_variant=req.contract_variant,
         principal_repayment=principal_repayment,
         coupon_earned=coupon_earned,
         total_maturity_value=total_value,
@@ -67,6 +81,7 @@ def calculate_dcd_payoff(req: DcdPayoffRequest) -> DcdPayoffResponse:
         effective_ret_pct = (base_pnl / req.deposit_amount) * 100.0
     else:
         principal_repayment = req.deposit_amount
+        base_value_of_principal = req.deposit_amount
         repayment_currency = req.deposit_currency.upper()
         explanation = f"Conversion condition not satisfied ({req.conversion_condition}). Principal returned in {repayment_currency}."
         total_maturity_repayment = principal_repayment + coupon
@@ -86,6 +101,10 @@ def calculate_dcd_payoff(req: DcdPayoffRequest) -> DcdPayoffResponse:
         coupon_currency=req.deposit_currency.upper(),
         total_maturity_repayment=total_maturity_repayment,
         effective_return_pct=effective_ret_pct,
+        principal_value_deposit_currency=base_value_of_principal,
+        total_value_deposit_currency=base_value_of_principal + coupon,
+        absolute_profit_loss=base_value_of_principal + coupon - req.deposit_amount,
+        cash_flows=[{"type": "principal", "currency": repayment_currency, "amount": principal_repayment}, {"type": "coupon", "currency": req.deposit_currency, "amount": coupon}],
         explanation=explanation,
         contract_assumptions=assumptions
     )
@@ -94,10 +113,14 @@ def calculate_cpn_payoff(req: CpnPayoffRequest) -> CpnPayoffResponse:
     underlying_ret = (req.final_price - req.initial_price) / req.initial_price
     
     participation_gain = 0.0
+    cap_applied = False
     if underlying_ret > 0:
         participation_gain = req.investment * (req.participation_rate / 100.0) * underlying_ret
         if req.upside_cap_pct is not None:
-            max_gain = req.investment * (req.participation_rate / 100.0) * (req.upside_cap_pct / 100.0)
+            max_gain = req.investment * (req.upside_cap_pct / 100.0)
+            if req.cap_basis == "underlying_return":
+                max_gain *= req.participation_rate / 100.0
+            cap_applied = participation_gain > max_gain
             participation_gain = min(participation_gain, max_gain)
 
     protected_principal = req.investment * (req.protection_pct / 100.0)
@@ -111,16 +134,19 @@ def calculate_cpn_payoff(req: CpnPayoffRequest) -> CpnPayoffResponse:
     ret_pct = (pnl / req.investment) * 100.0
 
     explanation = f"CPN Payoff. Protected principal: {req.protection_pct}%. Underlying return: {underlying_ret*100:.2f}%. Participation gain earned based on participation rate."
-    if req.upside_cap_pct is not None and underlying_ret * 100 > req.upside_cap_pct:
+    if cap_applied:
         explanation += " Upside cap was applied."
 
-    assumptions = "Simplified CPN model. Issuer default risk, liquidity risk, inflation, and opportunity cost are not eliminated by principal protection. Participation gain is strictly applied to positive underlying returns."
+    assumptions = f"Illustrative fixed protected-base CPN: repayment base is always investment * protection_pct/100, even in a flat/rising market. Participation applies only to positive returns. Cap basis: {req.cap_basis}; cap excludes coupon. Protection is only at maturity and subject to issuer solvency; fees, taxes, liquidity and opportunity cost are excluded."
 
     return CpnPayoffResponse(
         investment_amount=req.investment,
         initial_price=req.initial_price,
         final_price=req.final_price,
         underlying_return=underlying_ret,
+        underlying_return_pct=underlying_ret * 100,
+        protection_active=underlying_ret <= 0,
+        cap_applied=cap_applied,
         protected_principal=protected_principal,
         participation_gain=participation_gain,
         coupon=coupon,

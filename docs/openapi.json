@@ -1,0 +1,3880 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Suitability-Aware Payoff Simulator",
+    "description": "Deterministic ELN, DCD and CPN payoff, historical analysis and suitability. Percentages use percentage points.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Health Check",
+        "description": "Liveness check.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/underlyings": {
+      "get": {
+        "tags": [
+          "legacy"
+        ],
+        "summary": "List Underlyings",
+        "description": "Return the list of supported underlyings.",
+        "operationId": "list_underlyings_underlyings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Underlyings Underlyings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/prices/{underlying}": {
+      "get": {
+        "tags": [
+          "legacy"
+        ],
+        "summary": "Get Prices",
+        "description": "Return price metadata for a given underlying.\n\n- **s0**: Latest closing price (reference price)\n- **start_date**: First date in the CSV\n- **end_date**: Last date in the CSV\n- **count**: Number of trading days loaded",
+        "operationId": "get_prices_prices__underlying__get",
+        "deprecated": true,
+        "parameters": [
+          {
+            "name": "underlying",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Underlying"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/payoff": {
+      "post": {
+        "tags": [
+          "legacy"
+        ],
+        "summary": "Compute Payoff Api",
+        "description": "Compute the ELN payoff curve and scenario table.\n\nReturns:\n- **s0**: Current reference price\n- **barrier_price**: Barrier in absolute INR terms\n- **strike_price**: Strike in absolute INR terms\n- **curve**: x/y data for the payoff chart\n- **scenarios**: Scenario table for preset shocks\n- **formula_text**: Human-readable payoff formula",
+        "operationId": "compute_payoff_api_payoff_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/payoff/eln": {
+      "post": {
+        "tags": [
+          "payoff",
+          "phase2"
+        ],
+        "summary": "Compute Eln Api",
+        "description": "Compute ELN payoff for a specific final outcome.",
+        "operationId": "compute_eln_api_api_payoff_eln_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ElnPayoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElnPayoffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payoff/dcd": {
+      "post": {
+        "tags": [
+          "payoff",
+          "phase2"
+        ],
+        "summary": "Compute Dcd Api",
+        "description": "Compute DCD payoff for a specific final outcome.",
+        "operationId": "compute_dcd_api_api_payoff_dcd_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DcdPayoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DcdPayoffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/payoff/cpn": {
+      "post": {
+        "tags": [
+          "payoff",
+          "phase2"
+        ],
+        "summary": "Compute Cpn Api",
+        "description": "Compute CPN payoff for a specific final outcome.",
+        "operationId": "compute_cpn_api_api_payoff_cpn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CpnPayoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CpnPayoffResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market-data/history": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Get Market History",
+        "operationId": "get_market_history_api_market_data_history_get",
+        "parameters": [
+          {
+            "name": "ticker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "^NSEI",
+              "title": "Ticker"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "10y",
+              "title": "Period"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/market-data/catalog": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Get Market Catalog",
+        "operationId": "get_market_catalog_api_market_data_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MarketInstrument"
+                  },
+                  "type": "array",
+                  "title": "Response Get Market Catalog Api Market Data Catalog Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/market-data/search": {
+      "get": {
+        "tags": [
+          "market"
+        ],
+        "summary": "Search Market Symbols",
+        "operationId": "search_market_symbols_api_market_data_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "equity",
+              "title": "Kind"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/products/validate": {
+      "post": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Validate Product Template",
+        "operationId": "validate_product_template_api_products_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductTemplate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidatedProduct"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/prepare": {
+      "post": {
+        "tags": [
+          "products"
+        ],
+        "summary": "Prepare Saved Product",
+        "operationId": "prepare_saved_product_api_products_prepare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedProduct"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulation/run": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Simulation Bundle",
+        "operationId": "simulation_bundle_api_simulation_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationBundle"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/suitability/evaluate": {
+      "post": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Evaluate Configured Product",
+        "operationId": "evaluate_configured_product_api_suitability_evaluate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationBundle"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/scenarios/simulate": {
+      "post": {
+        "tags": [
+          "simulation",
+          "phase3"
+        ],
+        "summary": "Simulate Scenarios Api",
+        "description": "Run hypothetical scenarios for a configured product.",
+        "operationId": "simulate_scenarios_api_api_scenarios_simulate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/backtest/run": {
+      "post": {
+        "tags": [
+          "backtest",
+          "phase3"
+        ],
+        "summary": "Run Backtest Api",
+        "description": "Run historical rolling-window backtest on real market data paths.",
+        "operationId": "run_backtest_api_api_backtest_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/suitability/check": {
+      "post": {
+        "tags": [
+          "suitability",
+          "phase4"
+        ],
+        "summary": "Check Suitability Api",
+        "description": "Evaluate client suitability against product risk characteristics.",
+        "operationId": "check_suitability_api_api_suitability_check_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuitabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuitabilityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BacktestRequest": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "eln_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dcd_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DcdPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpn_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CpnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticker": {
+            "type": "string",
+            "title": "Ticker",
+            "default": "^NSEI"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type"
+        ],
+        "title": "BacktestRequest"
+      },
+      "BacktestResponse": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "windows": {
+            "items": {
+              "$ref": "#/components/schemas/BacktestWindowResult"
+            },
+            "type": "array",
+            "title": "Windows"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/RiskMetrics"
+          },
+          "data_source": {
+            "type": "string",
+            "title": "Data Source"
+          },
+          "data_as_of": {
+            "type": "string",
+            "title": "Data As Of"
+          },
+          "value_currency": {
+            "type": "string",
+            "title": "Value Currency"
+          },
+          "assumptions": {
+            "type": "string",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticker",
+          "product_type",
+          "windows",
+          "metrics",
+          "data_source",
+          "data_as_of",
+          "value_currency",
+          "assumptions"
+        ],
+        "title": "BacktestResponse"
+      },
+      "BacktestWindowResult": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "maturity_date": {
+            "type": "string",
+            "title": "Maturity Date"
+          },
+          "initial_price": {
+            "type": "number",
+            "title": "Initial Price"
+          },
+          "final_price": {
+            "type": "number",
+            "title": "Final Price"
+          },
+          "min_observed_price": {
+            "type": "number",
+            "title": "Min Observed Price"
+          },
+          "barrier_breached": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Breached"
+          },
+          "conversion_occurred": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversion Occurred"
+          },
+          "protection_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protection Active"
+          },
+          "principal_repayment": {
+            "type": "number",
+            "title": "Principal Repayment"
+          },
+          "coupon_earned": {
+            "type": "number",
+            "title": "Coupon Earned"
+          },
+          "total_maturity_value": {
+            "type": "number",
+            "title": "Total Maturity Value"
+          },
+          "absolute_profit_loss": {
+            "type": "number",
+            "title": "Absolute Profit Loss"
+          },
+          "return_pct": {
+            "type": "number",
+            "title": "Return Pct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start_date",
+          "maturity_date",
+          "initial_price",
+          "final_price",
+          "min_observed_price",
+          "principal_repayment",
+          "coupon_earned",
+          "total_maturity_value",
+          "absolute_profit_loss",
+          "return_pct"
+        ],
+        "title": "BacktestWindowResult"
+      },
+      "CPNTerms": {
+        "properties": {
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coupon Pct Pa",
+            "default": 0
+          },
+          "protection_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Protection Pct"
+          },
+          "participation_rate": {
+            "type": "number",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Participation Rate"
+          },
+          "upside_cap_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upside Cap Pct"
+          },
+          "cap_basis": {
+            "type": "string",
+            "enum": [
+              "investor_return",
+              "underlying_return"
+            ],
+            "title": "Cap Basis",
+            "default": "investor_return"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tenor_years",
+          "protection_pct",
+          "participation_rate"
+        ],
+        "title": "CPNTerms"
+      },
+      "CashFlow": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "principal",
+              "coupon"
+            ],
+            "title": "Type"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Currency"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "currency",
+          "amount"
+        ],
+        "title": "CashFlow"
+      },
+      "ClientProfile": {
+        "properties": {
+          "exposure_details_provided": {
+            "type": "boolean",
+            "title": "Exposure Details Provided",
+            "default": true
+          },
+          "portfolio_currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Portfolio Currency",
+            "default": "INR"
+          },
+          "client_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Client Id"
+          },
+          "client_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Name"
+          },
+          "risk_appetite": {
+            "type": "string",
+            "enum": [
+              "CONSERVATIVE",
+              "MODERATE",
+              "AGGRESSIVE"
+            ],
+            "title": "Risk Appetite"
+          },
+          "investment_horizon_months": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 600.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment Horizon Months"
+          },
+          "max_acceptable_loss_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Acceptable Loss Pct"
+          },
+          "total_portfolio_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Portfolio Value"
+          },
+          "existing_underlying_exposure": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Existing Underlying Exposure",
+            "default": 0
+          },
+          "existing_issuer_exposure": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Existing Issuer Exposure",
+            "default": 0
+          },
+          "existing_structured_product_exposure": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Existing Structured Product Exposure",
+            "default": 0
+          },
+          "proposed_investment_amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Proposed Investment Amount"
+          },
+          "liquidity_requirement_months": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 600.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Liquidity Requirement Months"
+          },
+          "investment_objective": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "INCOME",
+                  "GROWTH",
+                  "CAPITAL_PRESERVATION"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment Objective"
+          },
+          "additional_constraints": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Additional Constraints"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "client_id",
+          "risk_appetite",
+          "proposed_investment_amount"
+        ],
+        "title": "ClientProfile"
+      },
+      "CpnPayoffRequest": {
+        "properties": {
+          "investment_currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Investment Currency",
+            "default": "INR"
+          },
+          "investment": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Investment"
+          },
+          "initial_price": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Initial Price"
+          },
+          "final_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Final Price"
+          },
+          "protection_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Protection Pct"
+          },
+          "participation_rate": {
+            "type": "number",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Participation Rate",
+            "description": "Percentage points; 80 means 80%"
+          },
+          "upside_cap_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upside Cap Pct"
+          },
+          "coupon_pct_pa": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Pct Pa"
+          },
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "cap_basis": {
+            "type": "string",
+            "enum": [
+              "investor_return",
+              "underlying_return"
+            ],
+            "title": "Cap Basis",
+            "default": "investor_return"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "investment",
+          "initial_price",
+          "final_price",
+          "protection_pct",
+          "participation_rate",
+          "tenor_years"
+        ],
+        "title": "CpnPayoffRequest"
+      },
+      "CpnPayoffResponse": {
+        "properties": {
+          "underlying_return_pct": {
+            "type": "number",
+            "title": "Underlying Return Pct"
+          },
+          "protection_active": {
+            "type": "boolean",
+            "title": "Protection Active"
+          },
+          "cap_applied": {
+            "type": "boolean",
+            "title": "Cap Applied"
+          },
+          "investment_amount": {
+            "type": "number",
+            "title": "Investment Amount"
+          },
+          "initial_price": {
+            "type": "number",
+            "title": "Initial Price"
+          },
+          "final_price": {
+            "type": "number",
+            "title": "Final Price"
+          },
+          "underlying_return": {
+            "type": "number",
+            "title": "Underlying Return"
+          },
+          "protected_principal": {
+            "type": "number",
+            "title": "Protected Principal"
+          },
+          "participation_gain": {
+            "type": "number",
+            "title": "Participation Gain"
+          },
+          "coupon": {
+            "type": "number",
+            "title": "Coupon"
+          },
+          "total_maturity_value": {
+            "type": "number",
+            "title": "Total Maturity Value"
+          },
+          "absolute_profit_loss": {
+            "type": "number",
+            "title": "Absolute Profit Loss"
+          },
+          "return_pct": {
+            "type": "number",
+            "title": "Return Pct"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "contract_assumptions": {
+            "type": "string",
+            "title": "Contract Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "underlying_return_pct",
+          "protection_active",
+          "cap_applied",
+          "investment_amount",
+          "initial_price",
+          "final_price",
+          "underlying_return",
+          "protected_principal",
+          "participation_gain",
+          "coupon",
+          "total_maturity_value",
+          "absolute_profit_loss",
+          "return_pct",
+          "explanation",
+          "contract_assumptions"
+        ],
+        "title": "CpnPayoffResponse"
+      },
+      "CurvePoint": {
+        "properties": {
+          "underlying_return_pct": {
+            "type": "number",
+            "title": "Underlying Return Pct"
+          },
+          "investor_return_pct": {
+            "type": "number",
+            "title": "Investor Return Pct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "underlying_return_pct",
+          "investor_return_pct"
+        ],
+        "title": "CurvePoint",
+        "description": "A single point on the payoff curve."
+      },
+      "DCDTerms": {
+        "properties": {
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coupon Pct Pa"
+          },
+          "conversion_strike_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Conversion Strike Rate"
+          },
+          "conversion_condition": {
+            "type": "string",
+            "enum": [
+              "FX_AT_OR_ABOVE_STRIKE",
+              "FX_AT_OR_BELOW_STRIKE"
+            ],
+            "title": "Conversion Condition",
+            "default": "FX_AT_OR_ABOVE_STRIKE"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tenor_years",
+          "coupon_pct_pa",
+          "conversion_strike_rate"
+        ],
+        "title": "DCDTerms"
+      },
+      "DcdPayoffRequest": {
+        "properties": {
+          "deposit_currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Deposit Currency"
+          },
+          "alternate_currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Alternate Currency"
+          },
+          "deposit_amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Deposit Amount"
+          },
+          "initial_fx_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Initial Fx Rate"
+          },
+          "conversion_strike_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Conversion Strike Rate"
+          },
+          "maturity_fx_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Maturity Fx Rate"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coupon Pct Pa"
+          },
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "conversion_condition": {
+            "type": "string",
+            "enum": [
+              "FX_AT_OR_ABOVE_STRIKE",
+              "FX_AT_OR_BELOW_STRIKE"
+            ],
+            "title": "Conversion Condition"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "deposit_currency",
+          "alternate_currency",
+          "deposit_amount",
+          "initial_fx_rate",
+          "conversion_strike_rate",
+          "maturity_fx_rate",
+          "coupon_pct_pa",
+          "tenor_years",
+          "conversion_condition"
+        ],
+        "title": "DcdPayoffRequest"
+      },
+      "DcdPayoffResponse": {
+        "properties": {
+          "principal_value_deposit_currency": {
+            "type": "number",
+            "title": "Principal Value Deposit Currency"
+          },
+          "total_value_deposit_currency": {
+            "type": "number",
+            "title": "Total Value Deposit Currency"
+          },
+          "absolute_profit_loss": {
+            "type": "number",
+            "title": "Absolute Profit Loss"
+          },
+          "cash_flows": {
+            "items": {
+              "$ref": "#/components/schemas/CashFlow"
+            },
+            "type": "array",
+            "title": "Cash Flows"
+          },
+          "deposit_currency": {
+            "type": "string",
+            "title": "Deposit Currency"
+          },
+          "alternate_currency": {
+            "type": "string",
+            "title": "Alternate Currency"
+          },
+          "maturity_fx_rate": {
+            "type": "number",
+            "title": "Maturity Fx Rate"
+          },
+          "conversion_strike": {
+            "type": "number",
+            "title": "Conversion Strike"
+          },
+          "conversion_occurred": {
+            "type": "boolean",
+            "title": "Conversion Occurred"
+          },
+          "principal_repayment_amount": {
+            "type": "number",
+            "title": "Principal Repayment Amount"
+          },
+          "repayment_currency": {
+            "type": "string",
+            "title": "Repayment Currency"
+          },
+          "coupon_amount": {
+            "type": "number",
+            "title": "Coupon Amount"
+          },
+          "coupon_currency": {
+            "type": "string",
+            "title": "Coupon Currency"
+          },
+          "total_maturity_repayment": {
+            "type": "number",
+            "title": "Total Maturity Repayment"
+          },
+          "effective_return_pct": {
+            "type": "number",
+            "title": "Effective Return Pct"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "contract_assumptions": {
+            "type": "string",
+            "title": "Contract Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "principal_value_deposit_currency",
+          "total_value_deposit_currency",
+          "absolute_profit_loss",
+          "cash_flows",
+          "deposit_currency",
+          "alternate_currency",
+          "maturity_fx_rate",
+          "conversion_strike",
+          "conversion_occurred",
+          "principal_repayment_amount",
+          "repayment_currency",
+          "coupon_amount",
+          "coupon_currency",
+          "total_maturity_repayment",
+          "effective_return_pct",
+          "explanation",
+          "contract_assumptions"
+        ],
+        "title": "DcdPayoffResponse"
+      },
+      "DimensionResult": {
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "title": "Dimension"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "PASS, WARNING, MISMATCH, INSUFFICIENT_DATA"
+          },
+          "relevant_input_values": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Relevant Input Values"
+          },
+          "rule_applied": {
+            "type": "string",
+            "title": "Rule Applied"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "data_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dimension",
+          "status",
+          "relevant_input_values",
+          "rule_applied",
+          "explanation"
+        ],
+        "title": "DimensionResult"
+      },
+      "ELNTerms": {
+        "properties": {
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coupon Pct Pa"
+          },
+          "strike_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Strike Pct"
+          },
+          "barrier_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Barrier Pct"
+          },
+          "barrier_monitoring": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "maturity"
+            ],
+            "title": "Barrier Monitoring",
+            "default": "daily"
+          },
+          "contract_variant": {
+            "type": "string",
+            "enum": [
+              "unconditional_strike",
+              "phase2_contingent"
+            ],
+            "title": "Contract Variant",
+            "default": "unconditional_strike"
+          },
+          "settlement_method": {
+            "type": "string",
+            "const": "cash",
+            "title": "Settlement Method",
+            "default": "cash"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tenor_years",
+          "coupon_pct_pa",
+          "strike_pct",
+          "barrier_pct"
+        ],
+        "title": "ELNTerms"
+      },
+      "ElnPayoffRequest": {
+        "properties": {
+          "investment_currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Investment Currency",
+            "default": "INR"
+          },
+          "investment": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Investment"
+          },
+          "initial_price": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Initial Price"
+          },
+          "final_price": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Final Price"
+          },
+          "strike_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Strike Pct"
+          },
+          "barrier_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Barrier Pct"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Coupon Pct Pa"
+          },
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "barrier_breached": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Breached"
+          },
+          "barrier_monitoring": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "maturity"
+            ],
+            "title": "Barrier Monitoring",
+            "default": "maturity"
+          },
+          "settlement_method": {
+            "type": "string",
+            "const": "cash",
+            "title": "Settlement Method",
+            "default": "cash"
+          },
+          "observed_prices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                "type": "array",
+                "maxItems": 20000,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Prices"
+          },
+          "contract_variant": {
+            "type": "string",
+            "enum": [
+              "phase2_contingent",
+              "unconditional_strike"
+            ],
+            "title": "Contract Variant",
+            "default": "phase2_contingent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "investment",
+          "initial_price",
+          "final_price",
+          "strike_pct",
+          "barrier_pct",
+          "coupon_pct_pa",
+          "tenor_years"
+        ],
+        "title": "ElnPayoffRequest"
+      },
+      "ElnPayoffResponse": {
+        "properties": {
+          "contract_variant": {
+            "type": "string",
+            "title": "Contract Variant"
+          },
+          "initial_price": {
+            "type": "number",
+            "title": "Initial Price"
+          },
+          "final_price": {
+            "type": "number",
+            "title": "Final Price"
+          },
+          "strike_price": {
+            "type": "number",
+            "title": "Strike Price"
+          },
+          "barrier_price": {
+            "type": "number",
+            "title": "Barrier Price"
+          },
+          "barrier_breached": {
+            "type": "boolean",
+            "title": "Barrier Breached"
+          },
+          "principal_repayment": {
+            "type": "number",
+            "title": "Principal Repayment"
+          },
+          "coupon_earned": {
+            "type": "number",
+            "title": "Coupon Earned"
+          },
+          "total_maturity_value": {
+            "type": "number",
+            "title": "Total Maturity Value"
+          },
+          "absolute_profit_loss": {
+            "type": "number",
+            "title": "Absolute Profit Loss"
+          },
+          "return_pct": {
+            "type": "number",
+            "title": "Return Pct"
+          },
+          "payoff_explanation": {
+            "type": "string",
+            "title": "Payoff Explanation"
+          },
+          "contract_assumptions": {
+            "type": "string",
+            "title": "Contract Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_variant",
+          "initial_price",
+          "final_price",
+          "strike_price",
+          "barrier_price",
+          "barrier_breached",
+          "principal_repayment",
+          "coupon_earned",
+          "total_maturity_value",
+          "absolute_profit_loss",
+          "return_pct",
+          "payoff_explanation",
+          "contract_assumptions"
+        ],
+        "title": "ElnPayoffResponse"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorDetail"
+            },
+            "type": "array",
+            "title": "Details",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "EvaluateRequest": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "eln_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dcd_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DcdPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpn_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CpnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticker": {
+            "type": "string",
+            "title": "Ticker",
+            "default": "^NSEI"
+          },
+          "include_history": {
+            "type": "boolean",
+            "title": "Include History",
+            "default": true
+          },
+          "client": {
+            "$ref": "#/components/schemas/ClientProfile"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type",
+          "client"
+        ],
+        "title": "EvaluateRequest"
+      },
+      "EvaluationBundle": {
+        "properties": {
+          "assessment": {
+            "$ref": "#/components/schemas/SuitabilityResponse"
+          },
+          "product_risk": {
+            "$ref": "#/components/schemas/ProductRiskCharacteristics"
+          },
+          "historical_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment",
+          "product_risk",
+          "historical_error"
+        ],
+        "title": "EvaluationBundle"
+      },
+      "MarketHistory": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "as_of": {
+            "type": "string",
+            "title": "As Of"
+          },
+          "fetched_at": {
+            "type": "string",
+            "title": "Fetched At"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "latest_price": {
+            "type": "number",
+            "title": "Latest Price"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "prices": {
+            "items": {
+              "$ref": "#/components/schemas/PricePoint"
+            },
+            "type": "array",
+            "title": "Prices"
+          },
+          "instrument": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketInstrument"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticker",
+          "source",
+          "as_of",
+          "fetched_at",
+          "count",
+          "latest_price",
+          "currency",
+          "warnings",
+          "prices"
+        ],
+        "title": "MarketHistory"
+      },
+      "MarketInstrument": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Currency"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "equity",
+              "fx"
+            ],
+            "title": "Kind"
+          },
+          "deposit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "INR",
+                  "USD",
+                  "EUR",
+                  "GBP",
+                  "JPY",
+                  "CHF",
+                  "AUD",
+                  "CAD",
+                  "SGD",
+                  "HKD"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deposit"
+          },
+          "alternate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "INR",
+                  "USD",
+                  "EUR",
+                  "GBP",
+                  "JPY",
+                  "CHF",
+                  "AUD",
+                  "CAD",
+                  "SGD",
+                  "HKD"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticker",
+          "label",
+          "currency",
+          "kind"
+        ],
+        "title": "MarketInstrument"
+      },
+      "PayoffResponse": {
+        "properties": {
+          "s0": {
+            "type": "number",
+            "title": "S0"
+          },
+          "barrier_price": {
+            "type": "number",
+            "title": "Barrier Price"
+          },
+          "strike_price": {
+            "type": "number",
+            "title": "Strike Price"
+          },
+          "curve": {
+            "items": {
+              "$ref": "#/components/schemas/CurvePoint"
+            },
+            "type": "array",
+            "title": "Curve"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/app__models__ScenarioResult"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "formula_text": {
+            "type": "string",
+            "title": "Formula Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "s0",
+          "barrier_price",
+          "strike_price",
+          "curve",
+          "scenarios",
+          "formula_text"
+        ],
+        "title": "PayoffResponse",
+        "description": "Full API response for POST /payoff."
+      },
+      "PrepareProductRequest": {
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/ProductTemplate"
+          },
+          "investment_amount": {
+            "type": "number",
+            "maximum": 1000000000000000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Investment Amount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "template",
+          "investment_amount"
+        ],
+        "title": "PrepareProductRequest"
+      },
+      "PreparedProduct": {
+        "properties": {
+          "configuration": {
+            "$ref": "#/components/schemas/SimulationRequest"
+          },
+          "market": {
+            "$ref": "#/components/schemas/MarketHistory"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "configuration",
+          "market"
+        ],
+        "title": "PreparedProduct"
+      },
+      "PriceInfo": {
+        "properties": {
+          "s0": {
+            "type": "number",
+            "title": "S0"
+          },
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "s0",
+          "start_date",
+          "end_date",
+          "count"
+        ],
+        "title": "PriceInfo",
+        "description": "Response for GET /prices/{underlying}."
+      },
+      "PricePoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "close": {
+            "type": "number",
+            "title": "Close"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date",
+          "close"
+        ],
+        "title": "PricePoint"
+      },
+      "ProductInput": {
+        "properties": {
+          "underlying": {
+            "type": "string",
+            "const": "NIFTY50",
+            "title": "Underlying",
+            "description": "Underlying index",
+            "default": "NIFTY50"
+          },
+          "investment": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Investment",
+            "description": "Investment amount in INR",
+            "default": 1000000
+          },
+          "tenor_years": {
+            "type": "number",
+            "title": "Tenor Years",
+            "description": "Tenor in years (0.5, 1, or 2)",
+            "default": 1.0
+          },
+          "strike_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Strike Pct",
+            "description": "Strike as % of S0 (70\u2013100)",
+            "default": 90.0
+          },
+          "barrier_pct": {
+            "type": "number",
+            "maximum": 99.0,
+            "minimum": 1.0,
+            "title": "Barrier Pct",
+            "description": "Barrier as % of S0 (40\u201385)",
+            "default": 70.0
+          },
+          "barrier_monitoring": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "maturity"
+            ],
+            "title": "Barrier Monitoring",
+            "description": "Barrier observation: daily or at maturity",
+            "default": "daily"
+          },
+          "coupon_pct_pa": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Coupon Pct Pa",
+            "description": "Annual coupon in % (1\u201330)",
+            "default": 12.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProductInput",
+        "description": "Input model for an Equity-Linked Note (ELN) product."
+      },
+      "ProductRiskCharacteristics": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "product_reference": {
+            "type": "string",
+            "title": "Product Reference"
+          },
+          "tenor_years": {
+            "type": "number",
+            "maximum": 30.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Tenor Years"
+          },
+          "underlying_asset": {
+            "type": "string",
+            "title": "Underlying Asset"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "principal_protection_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principal Protection Pct"
+          },
+          "max_contractual_loss_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Contractual Loss Pct"
+          },
+          "coupon_pct_pa": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coupon Pct Pa"
+          },
+          "upside_participation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upside Participation"
+          },
+          "risk_scope": {
+            "type": "string",
+            "title": "Risk Scope",
+            "default": "Modeled market payoff only; issuer default can lose all capital."
+          },
+          "early_exit_available": {
+            "type": "boolean",
+            "title": "Early Exit Available",
+            "default": false
+          },
+          "currency_conversion_risk": {
+            "type": "boolean",
+            "title": "Currency Conversion Risk",
+            "default": false
+          },
+          "historical_worst_loss_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historical Worst Loss Pct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type",
+          "product_reference",
+          "tenor_years",
+          "underlying_asset",
+          "issuer"
+        ],
+        "title": "ProductRiskCharacteristics"
+      },
+      "ProductTemplate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "ticker": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Ticker"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "INR",
+              "USD",
+              "EUR",
+              "GBP",
+              "JPY",
+              "CHF",
+              "AUD",
+              "CAD",
+              "SGD",
+              "HKD"
+            ],
+            "title": "Currency"
+          },
+          "eln_terms": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ELNTerms"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dcd_terms": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DCDTerms"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpn_terms": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CPNTerms"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "product_type",
+          "ticker",
+          "currency"
+        ],
+        "title": "ProductTemplate"
+      },
+      "RiskMetrics": {
+        "properties": {
+          "total_windows": {
+            "type": "integer",
+            "title": "Total Windows"
+          },
+          "average_return": {
+            "type": "number",
+            "title": "Average Return"
+          },
+          "median_return": {
+            "type": "number",
+            "title": "Median Return"
+          },
+          "best_return": {
+            "type": "number",
+            "title": "Best Return"
+          },
+          "worst_return": {
+            "type": "number",
+            "title": "Worst Return"
+          },
+          "loss_frequency_pct": {
+            "type": "number",
+            "title": "Loss Frequency Pct"
+          },
+          "win_frequency_pct": {
+            "type": "number",
+            "title": "Win Frequency Pct"
+          },
+          "zero_return_frequency_pct": {
+            "type": "number",
+            "title": "Zero Return Frequency Pct"
+          },
+          "barrier_breaches": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Breaches"
+          },
+          "barrier_breach_freq_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Breach Freq Pct"
+          },
+          "conversion_frequency_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversion Frequency Pct"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total_windows",
+          "average_return",
+          "median_return",
+          "best_return",
+          "worst_return",
+          "loss_frequency_pct",
+          "win_frequency_pct",
+          "zero_return_frequency_pct"
+        ],
+        "title": "RiskMetrics"
+      },
+      "ScenarioRequest": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "eln_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dcd_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DcdPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpn_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CpnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "custom_scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number",
+                  "maximum": 1000.0,
+                  "minimum": -100.0
+                },
+                "type": "array",
+                "maxItems": 301,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Scenarios"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type"
+        ],
+        "title": "ScenarioRequest"
+      },
+      "ScenarioResponse": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/app__phase3_sim_models__ScenarioResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "assumptions": {
+            "type": "string",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type",
+          "results",
+          "assumptions"
+        ],
+        "title": "ScenarioResponse"
+      },
+      "SearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "SearchResponse"
+      },
+      "SearchResult": {
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "title": "Ticker"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "equity",
+              "fx"
+            ],
+            "title": "Kind"
+          },
+          "exchange": {
+            "type": "string",
+            "title": "Exchange",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticker",
+          "label",
+          "kind"
+        ],
+        "title": "SearchResult"
+      },
+      "SimulationBundle": {
+        "properties": {
+          "payoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElnPayoffResponse"
+              },
+              {
+                "$ref": "#/components/schemas/DcdPayoffResponse"
+              },
+              {
+                "$ref": "#/components/schemas/CpnPayoffResponse"
+              }
+            ],
+            "title": "Payoff"
+          },
+          "scenarios": {
+            "$ref": "#/components/schemas/ScenarioResponse"
+          },
+          "curve": {
+            "$ref": "#/components/schemas/ScenarioResponse"
+          },
+          "backtest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BacktestResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "historical_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorBody"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_risk": {
+            "$ref": "#/components/schemas/ProductRiskCharacteristics"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "payoff",
+          "scenarios",
+          "curve",
+          "backtest",
+          "historical_error",
+          "product_risk"
+        ],
+        "title": "SimulationBundle"
+      },
+      "SimulationRequest": {
+        "properties": {
+          "product_type": {
+            "type": "string",
+            "enum": [
+              "ELN",
+              "DCD",
+              "CPN"
+            ],
+            "title": "Product Type"
+          },
+          "eln_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ElnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dcd_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DcdPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpn_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CpnPayoffRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticker": {
+            "type": "string",
+            "title": "Ticker",
+            "default": "^NSEI"
+          },
+          "include_history": {
+            "type": "boolean",
+            "title": "Include History",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_type"
+        ],
+        "title": "SimulationRequest"
+      },
+      "SuitabilityCheck": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "risk_appetite",
+              "investment_horizon",
+              "loss_tolerance",
+              "portfolio_concentration",
+              "liquidity",
+              "investment_objective"
+            ],
+            "title": "Type"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "WARNING",
+              "MISMATCH"
+            ],
+            "title": "Status"
+          },
+          "client_value": {
+            "title": "Client Value"
+          },
+          "product_value": {
+            "title": "Product Value"
+          },
+          "reason_code": {
+            "type": "string",
+            "title": "Reason Code"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "status",
+          "client_value",
+          "product_value",
+          "reason_code",
+          "reason"
+        ],
+        "title": "SuitabilityCheck"
+      },
+      "SuitabilityRequest": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/ClientProfile"
+          },
+          "product_risk": {
+            "$ref": "#/components/schemas/ProductRiskCharacteristics"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "client",
+          "product_risk"
+        ],
+        "title": "SuitabilityRequest"
+      },
+      "SuitabilityResponse": {
+        "properties": {
+          "overall_status": {
+            "type": "string",
+            "enum": [
+              "suitable",
+              "suitable_with_warnings",
+              "review_required"
+            ],
+            "title": "Overall Status"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/SuitabilityCheck"
+            },
+            "type": "array",
+            "title": "Checks"
+          },
+          "assessment_id": {
+            "type": "string",
+            "title": "Assessment Id"
+          },
+          "client_reference": {
+            "type": "string",
+            "title": "Client Reference"
+          },
+          "product_reference": {
+            "type": "string",
+            "title": "Product Reference"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          },
+          "completeness": {
+            "type": "string",
+            "title": "Completeness",
+            "description": "COMPLETE or INCOMPLETE"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionResult"
+            },
+            "type": "array",
+            "title": "Dimensions"
+          },
+          "key_warnings_mismatches": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Key Warnings Mismatches"
+          },
+          "rule_set_version": {
+            "type": "string",
+            "title": "Rule Set Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "overall_status",
+          "checks",
+          "assessment_id",
+          "client_reference",
+          "product_reference",
+          "timestamp",
+          "completeness",
+          "dimensions",
+          "key_warnings_mismatches",
+          "rule_set_version"
+        ],
+        "title": "SuitabilityResponse"
+      },
+      "ValidatedProduct": {
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/ProductTemplate"
+          },
+          "instrument": {
+            "$ref": "#/components/schemas/MarketInstrument"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "template",
+          "instrument"
+        ],
+        "title": "ValidatedProduct"
+      },
+      "app__models__ScenarioResult": {
+        "properties": {
+          "shock_pct": {
+            "type": "number",
+            "title": "Shock Pct"
+          },
+          "underlying_return_pct": {
+            "type": "number",
+            "title": "Underlying Return Pct"
+          },
+          "redemption": {
+            "type": "number",
+            "title": "Redemption"
+          },
+          "coupon_amount": {
+            "type": "number",
+            "title": "Coupon Amount"
+          },
+          "final_amount": {
+            "type": "number",
+            "title": "Final Amount"
+          },
+          "profit_loss": {
+            "type": "number",
+            "title": "Profit Loss"
+          },
+          "return_pct": {
+            "type": "number",
+            "title": "Return Pct"
+          },
+          "barrier_breached": {
+            "type": "boolean",
+            "title": "Barrier Breached"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "shock_pct",
+          "underlying_return_pct",
+          "redemption",
+          "coupon_amount",
+          "final_amount",
+          "profit_loss",
+          "return_pct",
+          "barrier_breached"
+        ],
+        "title": "ScenarioResult",
+        "description": "Scenario result for a given shock."
+      },
+      "app__phase3_sim_models__ScenarioResult": {
+        "properties": {
+          "scenario_shock_pct": {
+            "type": "number",
+            "title": "Scenario Shock Pct"
+          },
+          "initial_price": {
+            "type": "number",
+            "title": "Initial Price"
+          },
+          "underlying_final_level": {
+            "type": "number",
+            "title": "Underlying Final Level"
+          },
+          "underlying_return_pct": {
+            "type": "number",
+            "title": "Underlying Return Pct"
+          },
+          "maturity_value": {
+            "type": "number",
+            "title": "Maturity Value"
+          },
+          "profit_loss": {
+            "type": "number",
+            "title": "Profit Loss"
+          },
+          "return_pct": {
+            "type": "number",
+            "title": "Return Pct"
+          },
+          "principal_repayment": {
+            "type": "number",
+            "title": "Principal Repayment"
+          },
+          "coupon_earned": {
+            "type": "number",
+            "title": "Coupon Earned"
+          },
+          "participation_gain": {
+            "type": "number",
+            "title": "Participation Gain",
+            "default": 0
+          },
+          "value_currency": {
+            "type": "string",
+            "title": "Value Currency"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "barrier_breached": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Breached"
+          },
+          "strike_touched_or_below": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strike Touched Or Below"
+          },
+          "conversion_occurred": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversion Occurred"
+          },
+          "protection_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protection Active"
+          },
+          "cap_applied": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Applied"
+          },
+          "repayment_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repayment Currency"
+          },
+          "settlement_principal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Principal"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scenario_shock_pct",
+          "initial_price",
+          "underlying_final_level",
+          "underlying_return_pct",
+          "maturity_value",
+          "profit_loss",
+          "return_pct",
+          "principal_repayment",
+          "coupon_earned",
+          "value_currency",
+          "explanation"
+        ],
+        "title": "ScenarioResult"
+      }
+    }
+  }
+}

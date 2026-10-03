@@ -1,10 +1,3 @@
-/**
- * PayoffChart.jsx
- *
- * Recharts line chart showing investor return % vs underlying return %.
- * Reference lines drawn at barrier, strike, and zero.
- */
-
 import {
   LineChart,
   Line,
@@ -13,124 +6,104 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceLine,
+  ReferenceArea,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  const val = payload[0]?.value;
+} from "recharts";
+import { pct } from "../lib/api";
+export default function PayoffChart({
+  curve,
+  strikePct,
+  barrierPct,
+  protectionPct,
+}) {
   return (
-    <div className="bg-slate-900 border border-slate-700 text-white rounded shadow-lg p-2 text-xs">
-      <div className="mb-1 text-slate-400">Underlying: {label > 0 ? '+' : ''}{label}%</div>
-      <div className="font-semibold text-brand-light">
-        Investor: {val >= 0 ? '+' : ''}{val?.toFixed(2)}%
-      </div>
-    </div>
-  );
-};
-
-export default function PayoffChart({ curve, strikePct, barrierPct }) {
-  if (!curve || curve.length === 0) {
-    return <div className="h-80 bg-slate-100 animate-pulse rounded-lg" />;
-  }
-
-  return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={340}>
+    <div
+      className="chart-wrap"
+      role="img"
+      aria-label="Payoff chart comparing investor return with underlying movement; exact values appear in the scenario table."
+    >
+      <ResponsiveContainer width="100%" height={350}>
         <LineChart
           data={curve}
-          margin={{ top: 12, right: 24, left: 8, bottom: 12 }}
+          margin={{ top: 25, right: 24, left: 4, bottom: 18 }}
         >
           <CartesianGrid
-            strokeDasharray="4 4"
-            stroke="rgba(99,130,185,0.12)"
+            stroke="#253349"
+            strokeDasharray="3 5"
             vertical={false}
           />
           <XAxis
             dataKey="underlying_return_pct"
             type="number"
-            domain={['auto', 'auto']}
-            tickFormatter={v => `${v > 0 ? '+' : ''}${v}%`}
-            tick={{ fill: '#7a91b0', fontSize: 11 }}
-            axisLine={{ stroke: 'rgba(99,130,185,0.2)' }}
-            tickLine={false}
+            domain={[-90, 80]}
+            tickFormatter={(v) => v + "%"}
+            stroke="#8b9ab0"
+            fontSize={11}
             label={{
-              value: 'Underlying Return (%)',
-              position: 'insideBottom',
-              offset: -6,
-              style: { fill: '#7a91b0', fontSize: 11 },
+              value: "Underlying return (%)",
+              position: "insideBottom",
+              offset: -12,
+              fill: "#8b9ab0",
+              fontSize: 11,
             }}
           />
           <YAxis
-            tickFormatter={v => `${v > 0 ? '+' : ''}${v}%`}
-            tick={{ fill: '#7a91b0', fontSize: 11 }}
-            axisLine={false}
-            tickLine={false}
-            width={54}
-            label={{
-              value: 'Investor Return (%)',
-              angle: -90,
-              position: 'insideLeft',
-              offset: 12,
-              style: { fill: '#7a91b0', fontSize: 11 },
+            tickFormatter={(v) => v + "%"}
+            stroke="#8b9ab0"
+            fontSize={11}
+            width={56}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "#132033",
+              border: "1px solid #34445a",
+              borderRadius: 10,
+              color: "#e7edf7",
             }}
+            formatter={(v) => pct(v)}
+            labelFormatter={(v) => "Underlying: " + pct(v)}
           />
-          <Tooltip content={<CustomTooltip />} />
-
-          {/* Zero line */}
-          <ReferenceLine
-            y={0}
-            stroke="rgba(255,255,255,0.2)"
-            strokeDasharray="4 2"
-            strokeWidth={1.5}
-          />
-
-          {/* Strike reference */}
-          <ReferenceLine
-            x={strikePct - 100}
-            stroke="#4fa3e0"
-            strokeDasharray="6 3"
-            strokeWidth={1.5}
-            label={{
-              value: `Strike ${strikePct}%`,
-              position: 'top',
-              fill: '#4fa3e0',
-              fontSize: 10,
-            }}
-          />
-
-          {/* Barrier reference */}
-          <ReferenceLine
-            x={barrierPct - 100}
-            stroke="#f87171"
-            strokeDasharray="6 3"
-            strokeWidth={1.5}
-            label={{
-              value: `Barrier ${barrierPct}%`,
-              position: 'top',
-              fill: '#f87171',
-              fontSize: 10,
-            }}
-          />
-
+          <Legend verticalAlign="top" height={32} />
+          <ReferenceArea y1={-100} y2={0} fill="#df806d" fillOpacity={0.045} />
+          <ReferenceLine y={0} stroke="#69788d" />
+          {strikePct != null && (
+            <ReferenceLine
+              x={strikePct - 100}
+              stroke="#8baac8"
+              strokeDasharray="5 5"
+              label={{ value: "Strike", fill: "#8baac8", fontSize: 11 }}
+            />
+          )}
+          {barrierPct != null && (
+            <ReferenceLine
+              x={barrierPct - 100}
+              stroke="#e2a66d"
+              strokeDasharray="5 5"
+              label={{ value: "Barrier", fill: "#e2a66d", fontSize: 11 }}
+            />
+          )}
+          {protectionPct != null && (
+            <ReferenceLine
+              y={protectionPct - 100}
+              stroke="#9eafc5"
+              strokeDasharray="5 5"
+              label={{
+                value: "Protected base (excl. coupon)",
+                fill: "#9eafc5",
+                fontSize: 10,
+              }}
+            />
+          )}
           <Line
-            type="monotone"
+            name="Investor return"
+            type="linear"
             dataKey="investor_return_pct"
-            stroke="url(#payoffGradient)"
+            stroke="#9abada"
             strokeWidth={2.5}
             dot={false}
-            activeDot={{ r: 5, fill: '#4fa3e0', stroke: '#fff', strokeWidth: 2 }}
+            animationDuration={350}
           />
-
-          {/* SVG gradient definition */}
-          <defs>
-            <linearGradient id="payoffGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#f87171" />
-              <stop offset="45%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#34d399" />
-            </linearGradient>
-          </defs>
         </LineChart>
       </ResponsiveContainer>
     </div>
