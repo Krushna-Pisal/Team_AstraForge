@@ -53,6 +53,13 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
   const [marketError, setMarketError] = useState("");
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  function handleDeleteProduct() {
+    if (edit?.id) {
+      dispatch({ type: "delete_product", id: edit.id });
+      navigate("/simulator");
+    }
+  }
   useEffect(() => {
     if (!underlying) return;
     const controller = new AbortController();
@@ -325,7 +332,39 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
             : ""}
         </p>
         <ErrorNotice error={error} />
+        {confirmDelete && edit && (
+          <div className="notice warning delete-confirm-bar" role="alert">
+            <span>
+              Are you sure you want to delete <strong>{edit.template.name}</strong> from saved products?
+            </span>
+            <div className="button-row">
+              <button
+                type="button"
+                className="btn-danger-sm"
+                onClick={handleDeleteProduct}
+              >
+                Yes, delete product
+              </button>
+              <button
+                type="button"
+                className="btn-secondary-sm"
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         <div className="actions">
+          {edit && !confirmDelete && (
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete product
+            </button>
+          )}
           {state.client?.proposed_investment_amount && <button type="submit" value="use" className="btn-secondary" disabled={busy || !market}>Save & use for this customer</button>}
           <Link to="/simulator" className="btn-secondary">
             Back to products
