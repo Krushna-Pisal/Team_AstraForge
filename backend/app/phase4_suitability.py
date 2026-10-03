@@ -94,7 +94,9 @@ def evaluate_loss_tolerance(client: ClientProfile, product: ProductRiskCharacter
         )
         
     worst_loss = None
-    if product.max_contractual_loss_pct is not None:
+    if product.product_type == "CPN" and product.principal_protection_pct is not None:
+        worst_loss = round(max(0.0, 100.0 - float(product.principal_protection_pct)), 2)
+    elif product.max_contractual_loss_pct is not None:
         worst_loss = product.max_contractual_loss_pct
     if product.historical_worst_loss_pct is not None:
         if worst_loss is None or product.historical_worst_loss_pct > worst_loss:

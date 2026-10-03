@@ -12,6 +12,7 @@ import {
 } from "../components/ui/Workflow";
 import PayoffChart from "../components/PayoffChart";
 import ScenarioCards from "../components/ScenarioCards";
+import CpnResultsView from "../components/cpn/CpnResultsView";
 
 export default function SimulationResults() {
   const { state, dispatch } = useAssessment();
@@ -43,6 +44,48 @@ export default function SimulationResults() {
         action="Choose a product"
       />
     );
+
+  if (product.type === "CPN") {
+    const cfg = product.config || {};
+    const extras =
+      state.products.find((p) => p.id === product.savedProductId)
+        ?.cpn_extras || {};
+    const cpnProd = {
+      underlying: extras.underlying || "NIFTY50",
+      investment: cfg.investment,
+      tenor_years: cfg.tenor_years,
+      protection_pct: cfg.protection_pct,
+      participation_pct: cfg.participation_rate,
+      cap_pct: cfg.upside_cap_pct ?? null,
+      coupon_pct_pa: cfg.coupon_pct_pa ?? 0,
+      fd_rate_pct_pa: extras.fd_rate_pct_pa ?? null,
+    };
+    return (
+      <div className="page-stack">
+        <PageTitle
+          title="Investment results"
+          eyebrow={"CPN / " + product.ticker}
+          description="Deterministic payoff curve, hypothetical scenarios, and real-data historical backtest."
+        />
+        <Steps current={2} />
+        <ErrorNotice error={error} retry={() => { setError(""); setAttempt((n) => n + 1); }} />
+        <CpnResultsView product={cpnProd} />
+        <div className="actions">
+          <Link className="btn-secondary" to="/simulator">
+            Change product
+          </Link>
+          <Link
+            className="btn-primary"
+            to={state.client ? "/simulator/suitability" : "/clients"}
+          >
+            {state.client
+              ? "Check client suitability →"
+              : "Add client profile →"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
   const currency =
     product.type === "DCD"
       ? product.config.deposit_currency
