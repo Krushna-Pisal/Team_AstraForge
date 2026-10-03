@@ -5,11 +5,11 @@
  * Rendered in the next phase.
  */
 
-export default function Placeholder({ step, title, description, icon }) {
+export default function Placeholder({ step: _step, title, description, icon }) {
   return (
     <div className="card fade-in">
       <div className="placeholder-card">
-        <div className="placeholder-icon">{icon || '🔒'}</div>
+        <div className="placeholder-icon">{icon || "🔒"}</div>
         <div className="placeholder-title">{title}</div>
         <p className="placeholder-desc">{description}</p>
         <span className="placeholder-chip">Coming in the next phase</span>

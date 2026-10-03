@@ -4,8 +4,9 @@ Pydantic models for the Structured Investment Product Payoff Simulator.
 
 from __future__ import annotations
 
-from typing import Literal, Optional
-from pydantic import BaseModel, Field, model_validator
+from typing import Literal
+from pydantic import Field, model_validator
+from app.domain import DomainModel as BaseModel
 
 
 VALID_UNDERLYINGS = ["NIFTY50"]
@@ -77,8 +78,6 @@ class PayoffResponse(BaseModel):
     barrier_price: float
     strike_price: float
     curve: list[CurvePoint]
-    curve_not_breached: Optional[list[CurvePoint]] = None
-    curve_breached: Optional[list[CurvePoint]] = None
     scenarios: list[ScenarioResult]
     formula_text: str
 

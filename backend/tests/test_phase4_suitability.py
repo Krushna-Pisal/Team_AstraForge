@@ -41,7 +41,7 @@ def test_risk_appetite():
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
     risk_dim = next(d for d in res.dimensions if d.dimension == "RISK_APPETITE")
-    assert risk_dim.status == "MATCH"
+    assert risk_dim.status == "PASS"
 
 def test_horizon():
     # 1 year tenor (12 months) vs 6 months horizon
@@ -57,11 +57,11 @@ def test_horizon():
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
     dim = next(d for d in res.dimensions if d.dimension == "INVESTMENT_HORIZON")
-    assert dim.status == "MATCH"
+    assert dim.status == "PASS"
 
 def test_loss_tolerance():
-    # Max loss 15%, worst product loss 30% -> exceeds 1.5x buffer (22.5%) -> MISMATCH
-    client = create_base_client(max_loss=15.0)
+    # Max loss 20%, worst product loss 30%
+    client = create_base_client(max_loss=20.0)
     prod = create_base_product(worst_loss=30.0)
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
@@ -77,7 +77,7 @@ def test_loss_tolerance():
     assert dim.status == "INSUFFICIENT_DATA"
 
 def test_concentration():
-    # Portfolio = 1M, Existing = 0, Proposed = 400K -> 40% (Mismatch > 30%)
+    # Portfolio = 1M, Existing = 0, Proposed = 400K -> 40% (Mismatch)
     client = create_base_client(portfolio=1_000_000, proposed=400_000)
     client.existing_structured_product_exposure = 0
     prod = create_base_product()
@@ -86,12 +86,12 @@ def test_concentration():
     dim = next(d for d in res.dimensions if d.dimension == "PORTFOLIO_CONCENTRATION")
     assert dim.status == "MISMATCH"
     
-    # 25% (Review 20-30%)
+    # 25% (Warning)
     client.proposed_investment_amount = 250_000
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
     dim = next(d for d in res.dimensions if d.dimension == "PORTFOLIO_CONCENTRATION")
-    assert dim.status == "REVIEW"
+    assert dim.status == "WARNING"
 
 def test_liquidity():
     # Need in 6 months, tenor 1 year, no early exit
@@ -107,7 +107,7 @@ def test_liquidity():
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
     dim = next(d for d in res.dimensions if d.dimension == "LIQUIDITY")
-    assert dim.status == "MATCH"
+    assert dim.status == "PASS"
 
 def test_missing_data_completeness():
     client = create_base_client()

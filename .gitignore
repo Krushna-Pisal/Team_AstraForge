@@ -48,3 +48,7 @@ desktop.ini
 # ── Misc ─────────────────────────────────────────────────
 *.tmp
 *.bak
+.runtime/
+frontend/test-results/
+frontend/playwright-report/
+.pytest-cache-v1/

@@ -1,51 +1,66 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './components/layout/MainLayout';
-import { SimulatorProvider } from './context/SimulatorContext';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "./components/layout/MainLayout";
+import { AssessmentProvider } from "./state/AssessmentContext";
+import { lazy, Suspense } from "react";
+import { Loading } from "./components/ui/Workflow";
 
-// Pages
-import Dashboard from './pages/Dashboard';
-import ProductSimulator from './pages/ProductSimulator';
-import ConfigureELN from './pages/ConfigureELN';
-import ConfigureDCD from './pages/ConfigureDCD';
-import ConfigureCPN from './pages/ConfigureCPN';
-import ClientProfile from './pages/ClientProfile';
-import SimulationResults from './pages/SimulationResults';
-import SuitabilityResults from './pages/SuitabilityResults';
-import AssessmentHistory from './pages/AssessmentHistory';
-import Reports from './pages/Reports';
-import ProductDiscovery from './pages/ProductDiscovery';
-import ClientExplanation from './pages/ClientExplanation';
+// Placeholder Pages
+import Dashboard from "./pages/Dashboard";
+import ProductSimulator from "./pages/ProductSimulator";
+import ConfigureELN from "./pages/ConfigureELN";
+import ConfigureDCD from "./pages/ConfigureDCD";
+import ConfigureCPN from "./pages/ConfigureCPN";
+import ClientProfile from "./pages/ClientProfile";
+import Investment from "./pages/Investment";
+const SimulationResults = lazy(() => import("./pages/SimulationResults"));
+import SuitabilityResults from "./pages/SuitabilityResults";
+import ProductDiscovery from "./pages/ProductDiscovery";
+import AssessmentHistory from "./pages/AssessmentHistory";
+import Reports from "./pages/Reports";
 
 export default function App() {
   return (
-    <SimulatorProvider>
+    <AssessmentProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Dashboard />} />
-            
+
             <Route path="simulator">
               <Route index element={<ProductSimulator />} />
               <Route path="eln" element={<ConfigureELN />} />
               <Route path="dcd" element={<ConfigureDCD />} />
               <Route path="cpn" element={<ConfigureCPN />} />
-              <Route path="client" element={<ClientProfile flow="simulator" />} />
-              <Route path="results" element={<SimulationResults />} />
+              <Route path="investment" element={<Investment />} />
+              <Route
+                path="client"
+                element={<ClientProfile flow="simulator" />}
+              />
+              <Route
+                path="results"
+                element={
+                  <Suspense
+                    fallback={<Loading text="Opening analysis workspace…" />}
+                  >
+                    <SimulationResults />
+                  </Suspense>
+                }
+              />
               <Route path="suitability" element={<SuitabilityResults />} />
-              <Route path="explanation" element={<ClientExplanation />} />
             </Route>
 
             <Route path="discovery">
               <Route index element={<ProductDiscovery />} />
             </Route>
 
+            <Route path="clients" element={<ClientProfile />} />
             <Route path="history" element={<AssessmentHistory />} />
             <Route path="reports" element={<Reports />} />
-            
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
-    </SimulatorProvider>
+    </AssessmentProvider>
   );
 }

@@ -1,73 +1,137 @@
-import { Link } from 'react-router-dom';
-import { LineChart, DollarSign, ShieldCheck } from 'lucide-react';
-
-const PRODUCTS = [
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { LineChart, ArrowLeftRight, ShieldCheck } from "lucide-react";
+import { PageTitle, Steps } from "../components/ui/Workflow";
+import { useAssessment } from "../state/AssessmentContext";
+// eslint-disable-next-line react/only-export-components
+export const PRODUCTS = [
   {
-    id: 'eln',
-    name: 'Equity-Linked Notes (ELN)',
-    description: 'Investment linked to the performance of an underlying equity or index, with contract-dependent coupons and downside exposure.',
+    id: "eln",
+    title: "Equity-linked note",
+    tag: "ELN",
     icon: LineChart,
-    features: ['Downside protection (barrier)', 'High yield potential', 'Market participation'],
-    path: '/simulator/eln'
+    description: "Earn interest with stock or index-linked risk.",
+    terms: ["Investment value can fall", "Interest depends on the contract"],
   },
   {
-    id: 'dcd',
-    name: 'Dual Currency Deposits (DCD)',
-    description: 'Deposit offering a coupon with possible repayment in an alternate currency depending on the exchange-rate condition.',
-    icon: DollarSign,
-    features: ['Enhanced yield', 'FX exposure', 'Short-term tenor'],
-    path: '/simulator/dcd'
+    id: "dcd",
+    title: "Dual currency deposit",
+    tag: "DCD",
+    icon: ArrowLeftRight,
+    description: "Earn interest with possible repayment in another currency.",
+    terms: ["Currency conversion risk", "A fixed conversion rate"],
   },
   {
-    id: 'cpn',
-    name: 'Capital-Protected Notes (CPN)',
-    description: 'Structured product offering contractual principal protection subject to issuer creditworthiness, with potential participation in underlying asset returns.',
+    id: "cpn",
+    title: "Capital-protected note",
+    tag: "CPN",
     icon: ShieldCheck,
-    features: ['Principal protection', 'Upside participation', 'Low risk'],
-    path: '/simulator/cpn'
-  }
+    description: "Protect an agreed portion and share in market growth.",
+    terms: ["Protection applies at maturity", "Issuer default risk remains"],
+  },
 ];
-
 export default function ProductSimulator() {
+  const { state, dispatch } = useAssessment();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const products = state.products.filter((p) =>
+    (p.template.name + " " + p.template.ticker)
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+  function use(p) {
+    dispatch({ type: "select_product", value: p.id });
+    navigate(state.client ? "/simulator/investment" : "/clients");
+  }
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div className="text-center space-y-3">
-        <h2 className="text-3xl font-bold text-slate-900">Select a Product</h2>
-        <p className="text-slate-500 max-w-2xl mx-auto">
-          Choose a structured investment product to configure parameters, simulate payoff scenarios, and assess client suitability.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        {PRODUCTS.map((product) => {
-          const Icon = product.icon;
-          return (
-            <div key={product.id} className="card p-6 flex flex-col h-full hover:border-brand transition-colors group">
-              <div className="w-14 h-14 rounded-xl bg-navy-50 text-brand flex items-center justify-center mb-6 group-hover:bg-brand group-hover:text-white transition-colors">
-                <Icon className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-3">{product.name}</h3>
-              <p className="text-slate-600 text-sm mb-6 flex-1">{product.description}</p>
-              
-              <div className="mb-6">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Key Characteristics</h4>
-                <ul className="space-y-2">
-                  {product.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start text-sm text-slate-700">
-                      <span className="text-emerald-500 mr-2">✓</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <Link to={product.path} className="btn-primary w-full mt-auto">
-                Select {product.id.toUpperCase()}
+    <div className="page-stack">
+      <PageTitle
+        title="Saved products"
+        description="Add a product once, then reuse it for another customer in this browser tab."
+      >
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            dispatch({ type: "new" });
+            navigate("/clients");
+          }}
+        >
+          New customer
+        </button>
+      </PageTitle>
+      <Steps current={1} />
+      <section className="page-stack">
+        <label className="field">
+          Find a saved product
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or underlying"
+          />
+        </label>
+        {!products.length && (
+          <div className="card section-card">
+            <p>
+              {state.products.length
+                ? "No products match your search."
+                : "No saved products yet. Add one below."}
+            </p>
+          </div>
+        )}
+        <div className="product-grid">
+          {products.map((p) => (
+            <article className="card product-card" key={p.id}>
+              <span className="badge">{p.template.product_type}</span>
+              <h2>{p.template.name}</h2>
+              <p>
+                {p.instrument.label} ({p.template.ticker})
+              </p>
+              <p className="muted">
+                {p.template.currency} ·{" "}
+                {
+                  p.template[p.template.product_type.toLowerCase() + "_terms"]
+                    .tenor_years
+                }{" "}
+                year(s)
+              </p>
+              <button className="btn-primary" onClick={() => use(p)}>
+                Use product
+              </button>
+              <Link
+                className="text-link"
+                to={
+                  "/simulator/" +
+                  p.template.product_type.toLowerCase() +
+                  "?edit=" +
+                  p.id
+                }
+              >
+                Edit saved product
               </Link>
-            </div>
-          );
-        })}
-      </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="page-stack">
+        <h2>Add a product</h2>
+        <div className="product-grid">
+          {PRODUCTS.map(({ id, title, icon: Icon, description }) => (
+            <article className="card product-card" key={id}>
+              <Icon size={24} />
+              <h2>{title}</h2>
+              <p className="muted">{description}</p>
+              <Link className="btn-secondary" to={"/simulator/" + id}>
+                Add {id.toUpperCase()}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+      <p className="muted">
+        Products survive page refreshes in this tab, but are not permanently
+        saved. Product terms are reused; customer details and investment amounts
+        are not.
+      </p>
     </div>
   );
 }
