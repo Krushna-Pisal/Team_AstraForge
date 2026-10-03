@@ -152,3 +152,7 @@ from app.phase4_suitability import run_suitability_assessment
 def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
     return run_suitability_assessment(req)
+
+# --- Phase 5 Endpoints ---
+from app.phase5_explanation.router import router as phase5_router
+app.include_router(phase5_router)

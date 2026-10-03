@@ -130,7 +130,12 @@ export default function SuitabilityResults() {
 
       <div className="flex justify-between pt-4">
         <button className="btn-secondary" onClick={() => navigate(-1)}>Back</button>
-        <button className="btn-primary" onClick={() => navigate('/history')}>Complete & Save Assessment</button>
+        <div className="space-x-4">
+          <button className="btn-secondary text-brand border-brand" onClick={() => navigate('/simulator/explanation')}>
+            Open Client Explanation
+          </button>
+          <button className="btn-primary" onClick={() => navigate('/history')}>Complete & Save</button>
+        </div>
       </div>
     </div>
   );

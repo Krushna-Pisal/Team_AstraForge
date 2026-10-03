@@ -97,7 +97,7 @@ def calculate_cpn_payoff(req: CpnPayoffRequest) -> CpnPayoffResponse:
     if underlying_ret > 0:
         participation_gain = req.investment * (req.participation_rate / 100.0) * underlying_ret
         if req.upside_cap_pct is not None:
-            max_gain = req.investment * (req.participation_rate / 100.0) * (req.upside_cap_pct / 100.0)
+            max_gain = req.investment * (req.upside_cap_pct / 100.0)
             participation_gain = min(participation_gain, max_gain)
 
     protected_principal = req.investment * (req.protection_pct / 100.0)
