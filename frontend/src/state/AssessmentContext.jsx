@@ -29,7 +29,7 @@ function initial() {
 }
 function reducer(state, action) {
   // New deterministic inputs invalidate both audience explanations.
-  if (["client", "budget", "product", "save_product", "select_product", "start_assessment", "simulation", "evaluation", "restore"].includes(action.type)) state = {...state, insights: {}};
+  if (["client", "budget", "product", "save_product", "delete_product", "select_product", "start_assessment", "simulation", "evaluation", "restore"].includes(action.type)) state = {...state, insights: {}};
   switch (action.type) {
     case "insights":
       return action.assessmentId === state.evaluation?.assessment.assessment_id ? {...state, insights: {...state.insights, [action.audience]: action.value}} : state;
@@ -46,6 +46,19 @@ function reducer(state, action) {
         product: null,
         simulation: null,
         evaluation: null,
+      };
+    case "delete_product":
+      return {
+        ...state,
+        products: state.products.filter((p) => p.id !== action.id),
+        selectedProductId:
+          state.selectedProductId === action.id ? null : state.selectedProductId,
+        product:
+          state.product?.savedProductId === action.id ? null : state.product,
+        simulation:
+          state.product?.savedProductId === action.id ? null : state.simulation,
+        evaluation:
+          state.product?.savedProductId === action.id ? null : state.evaluation,
       };
     case "select_product":
       return {

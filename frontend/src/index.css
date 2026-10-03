@@ -403,6 +403,102 @@ footer {
 .text-link:hover {
   color: #f1f6ff;
 }
+.btn-danger {
+  background: rgba(220, 38, 38, 0.16);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+.btn-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.28);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fef2f2;
+}
+.btn-danger-sm {
+  background: rgba(220, 38, 38, 0.22);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.btn-danger-sm:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.4);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+.btn-secondary-sm {
+  background: #172335;
+  border: 1px solid #344258;
+  color: #cad7e7;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.btn-secondary-sm:hover:not(:disabled) {
+  background: #223248;
+  border-color: #5b708b;
+}
+.text-danger-link {
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 140ms ease;
+}
+.text-danger-link:hover {
+  color: #fca5a5;
+  text-decoration: underline;
+}
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #233145;
+  gap: 8px;
+}
+.delete-confirm-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.delete-confirm-text {
+  font-size: 11px;
+  color: #fca5a5;
+  margin: 0;
+  line-height: 1.4;
+}
+.delete-confirm-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.delete-confirm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-left: 4px solid #ef4444;
+}
 .card {
   background: var(--surface);
   border: 1px solid var(--line);

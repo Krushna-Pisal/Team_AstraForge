@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LineChart, ArrowLeftRight, ShieldCheck } from "lucide-react";
+import { LineChart, ArrowLeftRight, ShieldCheck, Trash2 } from "lucide-react";
 import { PageTitle, Steps } from "../components/ui/Workflow";
 import { useAssessment } from "../state/AssessmentContext";
 // eslint-disable-next-line react/only-export-components
@@ -34,6 +34,7 @@ export default function ProductSimulator() {
   const { state, dispatch } = useAssessment();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const products = state.products.filter((p) =>
     (p.template.name + " " + p.template.ticker)
       .toLowerCase()
@@ -42,6 +43,10 @@ export default function ProductSimulator() {
   function use(p) {
     dispatch({ type: "select_product", value: p.id });
     navigate(state.client ? "/simulator/investment" : "/clients");
+  }
+  function handleDelete(id) {
+    dispatch({ type: "delete_product", id });
+    setConfirmDeleteId(null);
   }
   return (
     <div className="page-stack">
@@ -79,37 +84,74 @@ export default function ProductSimulator() {
           </div>
         )}
         <div className="product-grid">
-          {products.map((p) => (
-            <article className="card product-card" key={p.id}>
-              <span className="badge">{p.template.product_type}</span>
-              <h2>{p.template.name}</h2>
-              <p>
-                {p.instrument.label} ({p.template.ticker})
-              </p>
-              <p className="muted">
-                {p.template.currency} ·{" "}
-                {
-                  p.template[p.template.product_type.toLowerCase() + "_terms"]
-                    .tenor_years
-                }{" "}
-                year(s)
-              </p>
-              <button className="btn-primary" onClick={() => use(p)}>
-                Use product
-              </button>
-              <Link
-                className="text-link"
-                to={
-                  "/simulator/" +
-                  p.template.product_type.toLowerCase() +
-                  "?edit=" +
-                  p.id
-                }
-              >
-                Edit saved product
-              </Link>
-            </article>
-          ))}
+          {products.map((p) => {
+            const isConfirming = confirmDeleteId === p.id;
+            return (
+              <article className="card product-card" key={p.id}>
+                <span className="badge">{p.template.product_type}</span>
+                <h2>{p.template.name}</h2>
+                <p>
+                  {p.instrument.label} ({p.template.ticker})
+                </p>
+                <p className="muted">
+                  {p.template.currency} ·{" "}
+                  {
+                    p.template[p.template.product_type.toLowerCase() + "_terms"]
+                      .tenor_years
+                  }{" "}
+                  year(s)
+                </p>
+                <button className="btn-primary" onClick={() => use(p)}>
+                  Use product
+                </button>
+                <div className="product-card-footer">
+                  <Link
+                    className="text-link"
+                    to={
+                      "/simulator/" +
+                      p.template.product_type.toLowerCase() +
+                      "?edit=" +
+                      p.id
+                    }
+                  >
+                    Edit product
+                  </Link>
+                  <button
+                    type="button"
+                    className="text-danger-link"
+                    onClick={() => setConfirmDeleteId(isConfirming ? null : p.id)}
+                    title="Delete saved product"
+                  >
+                    <Trash2 size={13} />
+                    Delete
+                  </button>
+                </div>
+                {isConfirming && (
+                  <div className="delete-confirm-box" role="alert">
+                    <p className="delete-confirm-text">
+                      Delete <strong>{p.template.name}</strong> from saved products?
+                    </p>
+                    <div className="delete-confirm-buttons">
+                      <button
+                        type="button"
+                        className="btn-danger-sm"
+                        onClick={() => handleDelete(p.id)}
+                      >
+                        Yes, delete
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary-sm"
+                        onClick={() => setConfirmDeleteId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
       <section id="new-product" className="page-stack">
