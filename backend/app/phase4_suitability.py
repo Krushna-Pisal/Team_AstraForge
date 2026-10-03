@@ -18,7 +18,8 @@ class AuditStore:
         return self.records.get(assessment_id)
 
     def list_all(self) -> List[AuditRecord]:
-        return list(self.records.values())
+        # Return newest first
+        return list(reversed(list(self.records.values())))
 
 audit_store = AuditStore()
 
