@@ -40,10 +40,10 @@ def validate_choices(raw, audience, catalog):
 @router.post("/generate",response_model=InsightResponse)
 def generate_insights(req: InsightRequest):
     data=trusted_inputs(req.assessment_id)
-    fallback=build_fallback(data,req.audience)
-    catalog=explanation_catalog(fallback)
+    fallback=build_fallback(data,req.audience,req.language)
+    catalog=explanation_catalog(fallback,req.language)
     key,model=gemini_settings()
-    payload={"audience":req.audience,"facts":data,"explanation_catalog":catalog}
+    payload={"audience":req.audience,"language":req.language,"facts":data,"explanation_catalog":catalog}
     fingerprint=hashlib.sha256(json.dumps({"payload":payload,"model":model,"prompt":INSIGHTS_PROMPT_VERSION},
         sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
     # Serialize identical requests to avoid duplicate model calls from rapid toggles.

@@ -17,4 +17,6 @@ for EVERY section_id in the supplied catalog. Do not write free-form prose, numb
 Markdown, statuses, scores, recommendations, or extra fields. All mandatory concerns remain visible.
 Return JSON matching the schema: audience and selections[{section_id,choice}].
 Use expanded for important MISMATCH/WARNING discussion where helpful. Do not omit any section.
+If a language is specified in the payload (e.g. HI or MR), the input catalog will be translated.
+Your selections must map precisely to the section_ids provided.
 """

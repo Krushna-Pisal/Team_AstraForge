@@ -4,10 +4,12 @@ from app.domain import DomainModel
 from app.phase3_sim_models import ScenarioResult
 
 Audience = Literal["RM", "CLIENT"]
+Language = Literal["EN", "HI", "MR"]
 
 class InsightRequest(DomainModel):
     assessment_id: str = Field(min_length=1, max_length=100)
     audience: Audience
+    language: Language = "EN"
     retry: bool = False
 
 class Fact(DomainModel):
