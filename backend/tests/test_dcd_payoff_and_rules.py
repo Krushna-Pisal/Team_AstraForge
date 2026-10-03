@@ -232,6 +232,7 @@ def test_dcd_suitability():
         issuer="AstraForge Bank",
         currency_conversion_risk=True,
         max_contractual_loss_pct=100.0,
+        assessed_loss_pct=100.0,
     )
     req = SuitabilityRequest(client=client_prof, product_risk=dcd_prod)
     res = run_suitability_assessment(req)

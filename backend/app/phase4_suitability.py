@@ -94,6 +94,8 @@ def evaluate_loss_tolerance(client: ClientProfile, product: ProductRiskCharacter
         )
         
     assessed_loss = product.assessed_loss_pct
+    if assessed_loss is None and product.product_type == "CPN" and product.principal_protection_pct is not None:
+        assessed_loss = round(max(0.0, 100.0 - float(product.principal_protection_pct)), 2)
     if assessed_loss is None:
         return DimensionResult(
             dimension="LOSS_TOLERANCE",

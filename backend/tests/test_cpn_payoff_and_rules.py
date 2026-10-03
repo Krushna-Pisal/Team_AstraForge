@@ -402,6 +402,7 @@ def test_cpn_test_13_regression_eln_dcd():
         issuer="AstraForge Bank",
         coupon_pct_pa=12.0,
         max_contractual_loss_pct=100.0,
+        assessed_loss_pct=100.0,
     )
     req_eln = SuitabilityRequest(client=client_prof, product_risk=eln_prod)
     res_eln = run_suitability_assessment(req_eln)
@@ -417,6 +418,7 @@ def test_cpn_test_13_regression_eln_dcd():
         issuer="AstraForge Bank",
         currency_conversion_risk=True,
         max_contractual_loss_pct=20.0,
+        assessed_loss_pct=20.0,
     )
     req_dcd = SuitabilityRequest(client=client_prof, product_risk=dcd_prod)
     res_dcd = run_suitability_assessment(req_dcd)
