@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import ProductInput, PayoffResponse, PriceInfo
 from app.market_data import get_price_info, get_s0
-from app.payoff_engine import build_payoff_curve, run_scenarios, get_formula_text, DEFAULT_SHOCKS
+from app.payoff_engine import build_payoff_curve, build_eln_two_curves, run_scenarios, get_formula_text, DEFAULT_SHOCKS
 from app.phase2_models import (
     ElnPayoffRequest, ElnPayoffResponse,
     DcdPayoffRequest, DcdPayoffResponse,
@@ -79,6 +79,7 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
     """
     s0 = get_s0(product.underlying)
     curve_data = build_payoff_curve(product, CURVE_RATIO_RANGE)
+    two_curves = build_eln_two_curves(product, CURVE_RATIO_RANGE)
     scenario_data = run_scenarios(product, DEFAULT_SHOCKS)
     formula_text = get_formula_text(product)
 
@@ -90,6 +91,16 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
             {"underlying_return_pct": p["underlying_return_pct"],
              "investor_return_pct": p["investor_return_pct"]}
             for p in curve_data
+        ],
+        curve_not_breached=[
+            {"underlying_return_pct": p["underlying_return_pct"],
+             "investor_return_pct": p["investor_return_pct"]}
+            for p in two_curves["curve_not_breached"]
+        ],
+        curve_breached=[
+            {"underlying_return_pct": p["underlying_return_pct"],
+             "investor_return_pct": p["investor_return_pct"]}
+            for p in two_curves["curve_breached"]
         ],
         scenarios=[
             {
@@ -145,10 +156,44 @@ def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
     return run_backtest(req)
 
 # --- Phase 4 Endpoints ---
-from app.phase4_models import SuitabilityRequest, SuitabilityResponse
-from app.phase4_suitability import run_suitability_assessment
+import os
+import json
+from app.phase4_models import SuitabilityRequest, SuitabilityResponse, AuditRecord
+from app.phase4_suitability import run_suitability_assessment, audit_store
+
+CLIENTS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mock_clients.json")
+
+
+@app.get("/api/clients", tags=["clients"])
+def get_mock_clients() -> list[dict[str, Any]]:
+    """Return pre-configured mock client profiles for demo and testing."""
+    if os.path.exists(CLIENTS_FILE):
+        with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+@app.get("/api/audit", tags=["audit"])
+def list_audit_records() -> list[dict[str, Any]]:
+    """Retrieve all suitability assessment audit trail records (newest first)."""
+    records = audit_store.list_all()
+    return [r.model_dump() for r in records]
+
+
+@app.get("/api/audit/{assessment_id}", tags=["audit"])
+def get_audit_record(assessment_id: str) -> dict[str, Any]:
+    """Retrieve a specific audit trail record by its assessment_id."""
+    record = audit_store.get(assessment_id)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Audit record {assessment_id} not found")
+    return record.model_dump()
+
 
 @app.post("/api/suitability/check", response_model=SuitabilityResponse, tags=["suitability", "phase4"])
 def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
-    return run_suitability_assessment(req)
+    try:
+        return run_suitability_assessment(req)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

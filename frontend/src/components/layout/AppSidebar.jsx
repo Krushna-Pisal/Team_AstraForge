@@ -1,15 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Compass, UserSquare2, History, FileText, Settings, Layers } from 'lucide-react';
+import { LayoutDashboard, Layers, History, FileText } from 'lucide-react';
 import clsx from 'clsx';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
   { name: 'Product Simulator', path: '/simulator', icon: Layers },
-  { name: 'Product Discovery', path: '/discovery', icon: Compass },
-  { name: 'Client Profiles', path: '/clients', icon: UserSquare2 },
   { name: 'Assessment History', path: '/history', icon: History },
   { name: 'Reports', path: '/reports', icon: FileText },
-  { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
 export default function AppSidebar() {
@@ -19,9 +16,9 @@ export default function AppSidebar() {
     <aside className="w-64 bg-navy-900 text-white flex flex-col h-full shrink-0 border-r border-navy-800">
       <div className="h-16 flex items-center px-6 border-b border-navy-800 shrink-0">
         <div className="w-8 h-8 bg-brand rounded flex items-center justify-center mr-3 font-bold text-lg">
-          IS
+          AS
         </div>
-        <span className="text-xl font-semibold tracking-tight text-white">InveSimul</span>
+        <span className="text-xl font-semibold tracking-tight text-white">AstraForge</span>
       </div>
       <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
@@ -46,8 +43,8 @@ export default function AppSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-navy-800 text-xs text-navy-400">
-        <p>InveSimul Phase 1</p>
-        <p>Simulation Engine v0.1.0</p>
+        <p>AstraForge SIP Simulator</p>
+        <p>Suitability Engine v1.0.0</p>
       </div>
     </aside>
   );

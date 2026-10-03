@@ -1,0 +1,58 @@
+[
+  {
+    "client_id": "CLI-RET-01",
+    "client_name": "Conservative retiree",
+    "risk_appetite": "CONSERVATIVE",
+    "investment_horizon_months": 12,
+    "max_acceptable_loss_pct": 5.0,
+    "existing_underlying_exposure_pct": 10.0,
+    "total_portfolio_value": 10000000.0,
+    "proposed_investment_amount": 1000000.0,
+    "existing_structured_product_exposure": 0.0,
+    "liquidity_requirement_months": 12,
+    "investment_objective": "Capital Preservation",
+    "rm_name": "Senior Advisory Desk"
+  },
+  {
+    "client_id": "CLI-BAL-02",
+    "client_name": "Balanced professional",
+    "risk_appetite": "MODERATE",
+    "investment_horizon_months": 24,
+    "max_acceptable_loss_pct": 15.0,
+    "existing_underlying_exposure_pct": 15.0,
+    "total_portfolio_value": 15000000.0,
+    "proposed_investment_amount": 1000000.0,
+    "existing_structured_product_exposure": 500000.0,
+    "liquidity_requirement_months": 6,
+    "investment_objective": "Growth",
+    "rm_name": "Wealth Management Team"
+  },
+  {
+    "client_id": "CLI-AGG-03",
+    "client_name": "Aggressive trader",
+    "risk_appetite": "AGGRESSIVE",
+    "investment_horizon_months": 36,
+    "max_acceptable_loss_pct": 40.0,
+    "existing_underlying_exposure_pct": 20.0,
+    "total_portfolio_value": 20000000.0,
+    "proposed_investment_amount": 1000000.0,
+    "existing_structured_product_exposure": 2000000.0,
+    "liquidity_requirement_months": 3,
+    "investment_objective": "Speculation",
+    "rm_name": "Private Banking Desk"
+  },
+  {
+    "client_id": "CLI-CON-04",
+    "client_name": "Concentrated holder",
+    "risk_appetite": "MODERATE",
+    "investment_horizon_months": 24,
+    "max_acceptable_loss_pct": 20.0,
+    "existing_underlying_exposure_pct": 35.0,
+    "total_portfolio_value": 10000000.0,
+    "proposed_investment_amount": 1000000.0,
+    "existing_structured_product_exposure": 500000.0,
+    "liquidity_requirement_months": 6,
+    "investment_objective": "Growth",
+    "rm_name": "Equity Solutions Desk"
+  }
+]
