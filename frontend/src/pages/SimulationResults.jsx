@@ -13,6 +13,7 @@ import {
 import PayoffChart from "../components/PayoffChart";
 import ScenarioCards from "../components/ScenarioCards";
 import CpnResultsView from "../components/cpn/CpnResultsView";
+import DcdResultsView from "../components/dcd/DcdResultsView";
 
 export default function SimulationResults() {
   const { state, dispatch } = useAssessment();
@@ -86,6 +87,51 @@ export default function SimulationResults() {
       </div>
     );
   }
+
+  if (product.type === "DCD") {
+    const cfg = product.config || {};
+    const extras =
+      state.products.find((p) => p.id === product.savedProductId)
+        ?.dcd_extras || {};
+    const dcdProd = {
+      pair: extras.pair || product.ticker || "USDINR=X",
+      deposit_currency: extras.deposit_currency || cfg.deposit_currency || "USD",
+      alternate_currency: extras.alternate_currency || cfg.alternate_currency || "INR",
+      deposit_amount: cfg.deposit_amount || extras.deposit_amount || 100000,
+      tenor_years: cfg.tenor_years || 0.25,
+      conversion_strike_rate: cfg.conversion_strike_rate || 86.5,
+      conversion_condition: cfg.conversion_condition || "FX_AT_OR_ABOVE_STRIKE",
+      coupon_pct_pa: cfg.coupon_pct_pa ?? 0,
+      initial_fx_rate: extras.initial_fx_rate || cfg.initial_fx_rate,
+      fd_rate_pct_pa: extras.fd_rate_pct_pa ?? null,
+    };
+    return (
+      <div className="page-stack">
+        <PageTitle
+          title="Investment results"
+          eyebrow={"DCD / " + (extras.pair || product.ticker)}
+          description="Deterministic payoff curve, hypothetical scenarios, and real FX historical backtest."
+        />
+        <Steps current={2} />
+        <ErrorNotice error={error} retry={() => { setError(""); setAttempt((n) => n + 1); }} />
+        <DcdResultsView product={dcdProd} />
+        <div className="actions">
+          <Link className="btn-secondary" to="/simulator">
+            Change product
+          </Link>
+          <Link
+            className="btn-primary"
+            to={state.client ? "/simulator/suitability" : "/clients"}
+          >
+            {state.client
+              ? "Check client suitability →"
+              : "Add client profile →"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const currency =
     product.type === "DCD"
       ? product.config.deposit_currency

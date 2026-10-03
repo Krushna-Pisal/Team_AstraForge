@@ -192,3 +192,7 @@ def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
 # --- CPN Endpoints ---
 from app.cpn.router import router as cpn_router
 app.include_router(cpn_router)
+
+# --- DCD Endpoints ---
+from app.dcd.router import router as dcd_router
+app.include_router(dcd_router)
