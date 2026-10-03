@@ -13,6 +13,8 @@ import SimulationResults from './pages/SimulationResults';
 import SuitabilityResults from './pages/SuitabilityResults';
 import AssessmentHistory from './pages/AssessmentHistory';
 import Reports from './pages/Reports';
+import ProductDiscovery from './pages/ProductDiscovery';
+import ClientExplanation from './pages/ClientExplanation';
 
 export default function App() {
   return (
@@ -30,6 +32,11 @@ export default function App() {
               <Route path="client" element={<ClientProfile flow="simulator" />} />
               <Route path="results" element={<SimulationResults />} />
               <Route path="suitability" element={<SuitabilityResults />} />
+              <Route path="explanation" element={<ClientExplanation />} />
+            </Route>
+
+            <Route path="discovery">
+              <Route index element={<ProductDiscovery />} />
             </Route>
 
             <Route path="history" element={<AssessmentHistory />} />

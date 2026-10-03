@@ -337,11 +337,16 @@ export default function SuitabilityResults() {
       {/* Navigation Actions */}
       <div className="flex justify-between items-center pt-4">
         <button className="btn-secondary" onClick={() => navigate(-1)}>Back</button>
-        <button className="btn-primary flex items-center space-x-2" onClick={() => navigate('/reports')}>
-          <FileCheck className="w-4 h-4" />
-          <span>View Audit Trail Report</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center space-x-3">
+          <button className="btn-secondary text-brand border-brand" onClick={() => navigate('/simulator/explanation')}>
+            Open Client Explanation
+          </button>
+          <button className="btn-primary flex items-center space-x-2" onClick={() => navigate('/reports')}>
+            <FileCheck className="w-4 h-4" />
+            <span>View Audit Trail Report</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
