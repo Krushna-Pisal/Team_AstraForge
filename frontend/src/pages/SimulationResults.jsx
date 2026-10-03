@@ -1,25 +1,90 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PayoffChart from '../components/PayoffChart';
 import ScenarioCards from '../components/ScenarioCards';
-
-const MOCK_SCENARIOS = [
-  { scenario: 'Strong Positive', shock_pct: 20, underlying_return_pct: 20, redemption: 1000000, coupon_amount: 120000, final_amount: 1120000, profit_loss: 120000, return_pct: 12, barrier_breached: false },
-  { scenario: 'Moderate Positive', shock_pct: 10, underlying_return_pct: 10, redemption: 1000000, coupon_amount: 120000, final_amount: 1120000, profit_loss: 120000, return_pct: 12, barrier_breached: false },
-  { scenario: 'Flat Market', shock_pct: 0, underlying_return_pct: 0, redemption: 1000000, coupon_amount: 120000, final_amount: 1120000, profit_loss: 120000, return_pct: 12, barrier_breached: false },
-  { scenario: 'Moderate Decline', shock_pct: -15, underlying_return_pct: -15, redemption: 1000000, coupon_amount: 120000, final_amount: 1120000, profit_loss: 120000, return_pct: 12, barrier_breached: false },
-  { scenario: 'Severe Decline', shock_pct: -35, underlying_return_pct: -35, redemption: 650000, coupon_amount: 120000, final_amount: 770000, profit_loss: -230000, return_pct: -23, barrier_breached: true },
-];
-
-const MOCK_CURVE = Array.from({length: 41}, (_, i) => {
-  const ret = -40 + (i * 2);
-  let invRet = 12;
-  if (ret < -30) invRet = ret + 12;
-  return { underlying_return_pct: ret, investor_return_pct: invRet };
-});
+import { useAppWorkflow } from '../AppContext';
 
 export default function SimulationResults() {
   const navigate = useNavigate();
+  const { workflowState, updateWorkflow } = useAppWorkflow();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState({ curve: [], scenarios: [] });
+
+  useEffect(() => {
+    const product = workflowState?.product;
+    if (!product) {
+      setError("No product configured. Please start from Step 1.");
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        if (product.product_type === 'ELN') {
+          const res = await fetch('http://localhost:8000/payoff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+          });
+          if (!res.ok) throw new Error('API failed to simulate ELN.');
+          const resData = await res.json();
+          setData({ curve: resData.curve, scenarios: resData.scenarios });
+          updateWorkflow('simulation', resData.scenarios);
+          updateWorkflow('payoff', resData);
+        } else {
+          const configKey = product.product_type.toLowerCase() + '_config';
+          const configObj = { ...product };
+          
+          if (product.product_type === 'CPN' && !configObj.initial_price) {
+            configObj.initial_price = 100.0;
+            configObj.final_price = 100.0;
+          }
+          if (product.product_type === 'DCD') {
+            configObj.initial_fx_rate = configObj.initial_fx || 83.50;
+            configObj.conversion_strike_rate = configObj.conversion_strike || 84.00;
+            configObj.maturity_fx_rate = configObj.initial_fx || 83.50;
+          }
+          
+          const payload = {
+            product_type: product.product_type,
+            [configKey]: configObj
+          };
+
+          const res = await fetch('http://localhost:8000/api/scenarios/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (!res.ok) throw new Error(`API failed to simulate ${product.product_type}.`);
+          const resData = await res.json();
+          setData({ curve: [], scenarios: resData.results });
+          updateWorkflow('simulation', resData.results);
+          updateWorkflow('payoff', {
+            total_maturity_value: resData.results.find(s => s.scenario_shock_pct === 0)?.maturity_value || 0
+          });
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []); // Only run once on mount
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 animate-pulse">Running Simulation...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-rose-500">Error: {error}</div>;
+  }
+
+  const p = workflowState?.product || {};
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -28,37 +93,35 @@ export default function SimulationResults() {
         <span className="px-3 py-1 bg-brand/10 text-brand rounded-full text-sm font-medium">Step 3 of 4</span>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm flex items-center">
-        <span className="mr-2">⚠️</span> DEMO DATA: These simulation outputs are for UI demonstration only. Final calculations will be provided by the Python financial engine.
-      </div>
-
       <div className="grid grid-cols-4 gap-4">
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Initial Investment</p>
-          <p className="text-lg font-bold text-slate-900">₹10,00,000</p>
+          <p className="text-lg font-bold text-slate-900">₹{p.investment?.toLocaleString() || p.deposit_amount?.toLocaleString()}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Max Potential Yield</p>
-          <p className="text-lg font-bold text-emerald-600">12.0%</p>
+          <p className="text-lg font-bold text-emerald-600">{p.coupon_pct_pa || p.coupon_rate || p.participation_rate || 0}%</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Downside Protection</p>
-          <p className="text-lg font-bold text-slate-900">Up to -30%</p>
+          <p className="text-lg font-bold text-slate-900">{p.barrier_pct ? `Up to -${100 - p.barrier_pct}%` : (p.protection_level ? `${p.protection_level}%` : 'N/A')}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-slate-500 mb-1">Risk Metric (Historical)</p>
-          <p className="text-lg font-bold text-rose-600">-18.4% max drawdown</p>
+          <p className="text-lg font-bold text-slate-900">N/A</p>
         </div>
       </div>
 
-      <div className="card p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Payoff Curve</h3>
-        <PayoffChart curve={MOCK_CURVE} strikePct={90} barrierPct={70} />
-      </div>
+      {data.curve.length > 0 && (
+        <div className="card p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Payoff Curve</h3>
+          <PayoffChart curve={data.curve} strikePct={p.strike_pct || 100} barrierPct={p.barrier_pct || 0} />
+        </div>
+      )}
 
       <div className="card p-6">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Scenario Analysis</h3>
-        <ScenarioCards scenarios={MOCK_SCENARIOS} />
+        <ScenarioCards scenarios={data.scenarios} />
       </div>
 
       <div className="flex justify-between">

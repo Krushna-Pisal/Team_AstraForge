@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppWorkflow } from '../AppContext';
 
 const defaults = {
   underlying: 'NIFTY50',
@@ -14,10 +15,21 @@ const defaults = {
 };
 
 export default function ConfigureELN() {
-  const [product, setProduct] = useState(defaults);
+  const { workflowState, updateWorkflow } = useAppWorkflow();
+  const [product, setProduct] = useState(() => {
+    if (workflowState?.product?.product_type === 'ELN') {
+      return workflowState.product;
+    }
+    return defaults;
+  });
   const navigate = useNavigate();
   
   const set = (k, v) => setProduct(prev => ({...prev, [k]: v}));
+
+  const handleNext = () => {
+    updateWorkflow('product', { ...product, product_type: 'ELN' });
+    navigate('/simulator/client');
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -95,7 +107,7 @@ export default function ConfigureELN() {
 
       <div className="flex justify-between">
         <button className="btn-secondary" onClick={() => navigate('/simulator')}>Cancel</button>
-        <button className="btn-primary" onClick={() => navigate('/simulator/client')}>Next: Client Profile</button>
+        <button className="btn-primary" onClick={handleNext}>Next: Client Profile</button>
       </div>
     </div>
   );

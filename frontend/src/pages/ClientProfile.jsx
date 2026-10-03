@@ -1,24 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppWorkflow } from '../AppContext';
+
+const defaults = {
+  name: 'Arjun Desai',
+  id: 'CL-88219',
+  risk_appetite: 'Moderate',
+  investment_horizon: 12,
+  max_loss_tolerance: 15,
+  portfolio_value: 50000000,
+  proposed_investment: 1000000,
+  existing_exposure: 5,
+  liquidity_requirement: 'Medium',
+  objective: 'Growth'
+};
 
 export default function ClientProfile({ flow }) {
-  const [profile, setProfile] = useState({
-    name: 'Arjun Desai',
-    id: 'CL-88219',
-    risk_appetite: 'Moderate',
-    investment_horizon: 12,
-    max_loss_tolerance: 15,
-    portfolio_value: 50000000,
-    proposed_investment: 1000000,
-    existing_exposure: 5,
-    liquidity_requirement: 'Medium',
-    objective: 'Growth'
+  const { workflowState, updateWorkflow } = useAppWorkflow();
+  const [profile, setProfile] = useState(() => {
+    return workflowState?.client_profile || defaults;
   });
   
   const navigate = useNavigate();
   const set = (k, v) => setProfile(prev => ({...prev, [k]: v}));
 
   const handleNext = () => {
+    updateWorkflow('client_profile', profile);
     if (flow === 'simulator') navigate('/simulator/results');
     else navigate('/discovery/results');
   };
