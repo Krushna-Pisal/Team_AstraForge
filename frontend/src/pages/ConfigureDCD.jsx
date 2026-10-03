@@ -1,21 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppWorkflow } from '../AppContext';
+
+const defaults = {
+  deposit_currency: 'INR',
+  alternate_currency: 'USD',
+  deposit_amount: 1000000,
+  tenor_months: 3,
+  initial_fx: 83.50,
+  conversion_strike: 84.00,
+  coupon_rate: 6.5,
+  conversion_direction: 'base_to_alt',
+  settlement_currency: 'variable',
+  conversion_condition: 'at_maturity'
+};
 
 export default function ConfigureDCD() {
-  const [product, setProduct] = useState({
-    deposit_currency: 'INR',
-    alternate_currency: 'USD',
-    deposit_amount: 1000000,
-    tenor_months: 3,
-    initial_fx: 83.50,
-    conversion_strike: 84.00,
-    coupon_rate: 6.5,
-    conversion_direction: 'base_to_alt',
-    settlement_currency: 'variable',
-    conversion_condition: 'at_maturity'
+  const { workflowState, updateWorkflow } = useAppWorkflow();
+  const [product, setProduct] = useState(() => {
+    if (workflowState?.product?.product_type === 'DCD') {
+      return workflowState.product;
+    }
+    return defaults;
   });
   const navigate = useNavigate();
   const set = (k, v) => setProduct(prev => ({...prev, [k]: v}));
+
+  const handleNext = () => {
+    updateWorkflow('product', { ...product, product_type: 'DCD' });
+    navigate('/simulator/client');
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -73,7 +87,7 @@ export default function ConfigureDCD() {
 
       <div className="flex justify-between">
         <button className="btn-secondary" onClick={() => navigate('/simulator')}>Cancel</button>
-        <button className="btn-primary" onClick={() => navigate('/simulator/client')}>Next: Client Profile</button>
+        <button className="btn-primary" onClick={handleNext}>Next: Client Profile</button>
       </div>
     </div>
   );

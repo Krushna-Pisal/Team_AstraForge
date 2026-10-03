@@ -10,7 +10,9 @@ import os
 def get_historical_market_data(ticker: str = "^NSEI", period: str = "10y") -> pd.DataFrame:
     """
     Fetch historical data from yfinance. Uses LRU cache to avoid repeated hits in same run.
+    Falls back to local CSV if yfinance fails.
     """
+    csv_path = os.path.join(os.path.dirname(__file__), "..", "data", "NIFTY50.csv")
     try:
         tkr = yf.Ticker(ticker)
         df = tkr.history(period=period)
@@ -45,7 +47,32 @@ def get_historical_market_data(ticker: str = "^NSEI", period: str = "10y") -> pd
         
         return clean_df
     except Exception as e:
-        raise RuntimeError(f"Error fetching data from yfinance: {str(e)}")
+        print(f"yfinance fetch failed: {e}. Falling back to local CSV.")
+        if os.path.exists(csv_path):
+            df = pd.read_csv(csv_path)
+            
+            # Use 'Date' column or first column
+            date_col = "Date" if "Date" in df.columns else df.columns[0]
+            
+            required = ["Open", "High", "Low", "Close"]
+            for col in required:
+                if col not in df.columns:
+                    df[col] = df["Close"] if "Close" in df.columns else 0.0
+                    
+            df["date"] = pd.to_datetime(df[date_col]).dt.strftime("%Y-%m-%d")
+            df["open"] = df["Open"].round(4)
+            df["high"] = df["High"].round(4)
+            df["low"] = df["Low"].round(4)
+            df["close"] = df["Close"].round(4)
+            df["adj_close"] = df["Adj Close"].round(4) if "Adj Close" in df.columns else df["close"]
+            df["volume"] = df["Volume"] if "Volume" in df.columns else 0
+            
+            clean_df = df[["date", "open", "high", "low", "close", "adj_close", "volume"]].dropna()
+            clean_df = clean_df.drop_duplicates(subset=["date"])
+            clean_df = clean_df.sort_values("date").reset_index(drop=True)
+            return clean_df
+        else:
+            raise RuntimeError(f"Error fetching data from yfinance and fallback CSV not found: {str(e)}")
 
 def get_latest_price(ticker: str = "^NSEI") -> float:
     df = get_historical_market_data(ticker, period="1mo")
