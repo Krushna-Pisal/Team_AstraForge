@@ -145,13 +145,43 @@ def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
     return run_backtest(req)
 
 # --- Phase 4 Endpoints ---
-from app.phase4_models import SuitabilityRequest, SuitabilityResponse
-from app.phase4_suitability import run_suitability_assessment
+import os
+import json
+from app.phase4_models import SuitabilityRequest, SuitabilityResponse, AuditRecord
+from app.phase4_suitability import run_suitability_assessment, audit_store
+from typing import Any
+
+CLIENTS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mock_clients.json")
+
+@app.get("/api/clients", tags=["clients"])
+def get_mock_clients() -> list[dict[str, Any]]:
+    """Return pre-configured mock client profiles for demo and testing."""
+    if os.path.exists(CLIENTS_FILE):
+        with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+@app.get("/api/audit", tags=["audit"])
+def list_audit_records() -> list[dict[str, Any]]:
+    """Retrieve all suitability assessment audit trail records (newest first)."""
+    records = audit_store.list_all()
+    return [r.model_dump() for r in records]
+
+@app.get("/api/audit/{assessment_id}", tags=["audit"])
+def get_audit_record(assessment_id: str) -> dict[str, Any]:
+    """Retrieve a specific audit trail record by its assessment_id."""
+    record = audit_store.get(assessment_id)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Audit record {assessment_id} not found")
+    return record.model_dump()
 
 @app.post("/api/suitability/check", response_model=SuitabilityResponse, tags=["suitability", "phase4"])
 def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
-    return run_suitability_assessment(req)
+    try:
+        return run_suitability_assessment(req)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # --- Phase 5 Endpoints ---
 from app.phase5_explanation.router import router as phase5_router

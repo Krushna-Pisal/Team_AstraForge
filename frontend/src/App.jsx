@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 
-// Placeholder Pages
+// Pages
 import Dashboard from './pages/Dashboard';
 import ProductSimulator from './pages/ProductSimulator';
 import ConfigureELN from './pages/ConfigureELN';
