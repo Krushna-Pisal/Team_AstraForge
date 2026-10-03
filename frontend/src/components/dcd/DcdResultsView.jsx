@@ -3,6 +3,7 @@ import DcdPayoffChart from './DcdPayoffChart';
 import DcdScenarioCards from './DcdScenarioCards';
 import DcdBacktestPanel from './DcdBacktestPanel';
 import DcdRiskNotes from './DcdRiskNotes';
+import { api } from '../../lib/api';
 
 export default function DcdResultsView({ product }) {
   const [loadingCurve, setLoadingCurve] = useState(true);
@@ -40,19 +41,7 @@ export default function DcdResultsView({ product }) {
     // 1. Fetch Curve
     setLoadingCurve(true);
     setCurveError(null);
-    fetch('http://localhost:8000/api/dcd/curve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Curve calculation failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/dcd/curve', { body: payload })
       .then((data) => {
         setCurveData(data.points || []);
         setBreakpoints(data.breakpoints || null);
@@ -67,19 +56,7 @@ export default function DcdResultsView({ product }) {
     // 2. Fetch Scenarios
     setLoadingScenarios(true);
     setScenariosError(null);
-    fetch('http://localhost:8000/api/dcd/scenarios', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Scenario evaluation failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/dcd/scenarios', { body: payload })
       .then((data) => {
         setScenarios(data.scenarios || []);
         setLoadingScenarios(false);
@@ -92,19 +69,7 @@ export default function DcdResultsView({ product }) {
     // 3. Fetch Historical Backtest
     setLoadingBacktest(true);
     setBacktestError(null);
-    fetch('http://localhost:8000/api/dcd/backtest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Historical backtest failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/dcd/backtest', { body: payload })
       .then((data) => {
         setBacktest(data);
         setLoadingBacktest(false);

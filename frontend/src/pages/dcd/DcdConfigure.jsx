@@ -32,8 +32,7 @@ export default function DcdConfigure() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/dcd/pairs')
-      .then((res) => (res.ok ? res.json() : []))
+    api('/api/dcd/pairs')
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setPairs(data);

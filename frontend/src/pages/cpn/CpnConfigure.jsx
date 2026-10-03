@@ -32,8 +32,7 @@ export default function CpnConfigure() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/cpn/underlyings')
-      .then((res) => (res.ok ? res.json() : ['NIFTY50']))
+    api('/api/cpn/underlyings')
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setUnderlyings(data);

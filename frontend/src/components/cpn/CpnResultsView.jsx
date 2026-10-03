@@ -3,6 +3,7 @@ import CpnPayoffChart from './CpnPayoffChart';
 import CpnScenarioCards from './CpnScenarioCards';
 import CpnBacktestPanel from './CpnBacktestPanel';
 import CpnRiskNotes from './CpnRiskNotes';
+import { api } from '../../lib/api';
 export default function CpnResultsView({ product }) {
 
   const [loadingCurve, setLoadingCurve] = useState(true);
@@ -38,19 +39,7 @@ export default function CpnResultsView({ product }) {
     // 1. Fetch Curve
     setLoadingCurve(true);
     setCurveError(null);
-    fetch('http://localhost:8000/api/cpn/curve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Curve calculation failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/cpn/curve', { body: payload })
       .then((data) => {
         setCurveData(data.points || []);
         setBreakpoints(data.breakpoints || null);
@@ -65,19 +54,7 @@ export default function CpnResultsView({ product }) {
     // 2. Fetch Scenarios
     setLoadingScenarios(true);
     setScenariosError(null);
-    fetch('http://localhost:8000/api/cpn/scenarios', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Scenario simulation failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/cpn/scenarios', { body: payload })
       .then((data) => {
         setScenarios(data.results || []);
         setLoadingScenarios(false);
@@ -90,19 +67,7 @@ export default function CpnResultsView({ product }) {
     // 3. Fetch Backtest
     setLoadingBacktest(true);
     setBacktestError(null);
-    fetch('http://localhost:8000/api/cpn/backtest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((d) => {
-            throw new Error(d.detail || 'Backtest analysis failed.');
-          });
-        }
-        return res.json();
-      })
+    api('/api/cpn/backtest', { body: payload })
       .then((data) => {
         setBacktest(data);
         setLoadingBacktest(false);
