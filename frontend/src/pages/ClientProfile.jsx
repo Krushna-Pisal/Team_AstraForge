@@ -12,9 +12,9 @@ export default function ClientProfile({ flow }) {
     fetch('http://localhost:8000/api/clients')
       .then(res => res.json())
       .then(data => {
-        setMockClients(data);
+        setMockClients(Array.isArray(data) ? data : []);
       })
-      .catch(() => {});
+      .catch(() => { setMockClients([]); });
   }, []);
 
   const handleSelectMock = (e) => {

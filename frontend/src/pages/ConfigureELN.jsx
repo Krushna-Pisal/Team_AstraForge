@@ -1,23 +1,29 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const defaults = {
-  underlying: 'NIFTY50',
-  investment: 1000000,
-  tenor_years: 1,
-  strike_pct: 90,
-  barrier_pct: 70,
-  barrier_monitoring: 'daily',
-  coupon_pct_pa: 12,
-  coupon_condition: 'unconditional',
-  settlement_method: 'cash'
-};
+import { useSimulator } from '../context/SimulatorContext';
 
 export default function ConfigureELN() {
-  const [product, setProduct] = useState(defaults);
+  const { productConfig, setProductConfig } = useSimulator();
+  const [product, setProduct] = useState({
+    product_type: 'ELN',
+    underlying: productConfig.underlying || 'NIFTY50',
+    investment: productConfig.investment || 1000000,
+    tenor_years: productConfig.tenor_years || 1,
+    strike_pct: productConfig.strike_pct || 90,
+    barrier_pct: productConfig.barrier_pct || 70,
+    barrier_monitoring: productConfig.barrier_monitoring || 'daily',
+    coupon_pct_pa: productConfig.coupon_pct_pa || 12,
+    coupon_condition: 'unconditional',
+    settlement_method: 'cash'
+  });
   const navigate = useNavigate();
   
   const set = (k, v) => setProduct(prev => ({...prev, [k]: v}));
+
+  const handleNext = () => {
+    setProductConfig(prev => ({ ...prev, ...product }));
+    navigate('/simulator/client');
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -95,7 +101,7 @@ export default function ConfigureELN() {
 
       <div className="flex justify-between">
         <button className="btn-secondary" onClick={() => navigate('/simulator')}>Cancel</button>
-        <button className="btn-primary" onClick={() => navigate('/simulator/client')}>Next: Client Profile</button>
+        <button className="btn-primary" onClick={handleNext}>Next: Client Profile</button>
       </div>
     </div>
   );
