@@ -17,6 +17,9 @@ class AuditStore:
     def get(self, assessment_id: str) -> AuditRecord:
         return self.records.get(assessment_id)
 
+    def list_all(self) -> List[AuditRecord]:
+        return list(self.records.values())
+
 audit_store = AuditStore()
 
 RULE_SET_VERSION = "1.0.0"
