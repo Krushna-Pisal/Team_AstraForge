@@ -45,7 +45,6 @@ export default function SimulationResults() {
         action="Choose a product"
       />
     );
-
   if (product.type === "CPN") {
     const cfg = product.config || {};
     const extras =
