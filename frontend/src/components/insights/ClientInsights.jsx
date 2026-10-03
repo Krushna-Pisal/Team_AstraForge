@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { money, pct } from "../../lib/api";
 import { useAssessment } from "../../state/AssessmentContext";
-import { AlertTriangle, Info, FileText, CheckCircle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, Info, FileText, CheckCircle, ShieldAlert, Download, Loader2 } from "lucide-react";
+import PayoffChart from "../PayoffChart";
+import { pdf } from "@react-pdf/renderer";
+import ClientReportPDF from "./ClientReportPDF";
 
 const UI_STRINGS = {
   EN: {
@@ -82,8 +85,29 @@ export default function ClientInsights({ insights, language = "EN" }) {
   const { state } = useAssessment();
   const product = state.product?.config || {};
   const type = state.product?.type || "Product";
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   
   const t = UI_STRINGS[language] || UI_STRINGS.EN;
+
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const clientName = state.client?.client_name || "Client";
+      const blob = await pdf(<ClientReportPDF state={state} insights={insights} language={language} t={t} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${clientName}_InveSimul_Report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
   
   // A: At a glance
   const investment = product.investment ?? product.deposit_amount;
@@ -98,7 +122,17 @@ export default function ClientInsights({ insights, language = "EN" }) {
 
   return (
     <div className="page-stack">
-      
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <button 
+          className="btn-primary" 
+          onClick={handleDownloadPDF} 
+          disabled={isGeneratingPdf}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          {isGeneratingPdf ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+          {isGeneratingPdf ? "Generating Report..." : "Download Report"}
+        </button>
+      </div>
       {/* Section A */}
       <section className="card section-card page-stack">
         <h2>{t.at_a_glance}</h2>
@@ -116,6 +150,21 @@ export default function ClientInsights({ insights, language = "EN" }) {
       {/* Section B */}
       <section className="card section-card page-stack">
         <h2>{t.explore_scenarios}</h2>
+        
+        {state.simulation?.curve && (
+          <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+            <PayoffChart 
+              curve={state.simulation.curve.results.map(r => ({
+                underlying_return_pct: r.scenario_shock_pct,
+                investor_return_pct: r.return_pct
+              }))}
+              strikePct={type === "ELN" ? product.strike_pct : type === "DCD" ? (product.conversion_strike_rate / product.initial_fx_rate) * 100 : undefined}
+              barrierPct={type === "ELN" ? product.barrier_pct : undefined}
+              protectionPct={type === "CPN" ? product.protection_pct : undefined}
+            />
+          </div>
+        )}
+
         <p>{t.slider_instruction}</p>
         
         {scenarios.length > 0 && activeScenario && (
@@ -147,7 +196,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
                 </div>
                 <div>
                   <dt>{t.modeled_maturity}</dt>
-                  <dd><strong>{money(activeScenario.result.final_amount, currency)}</strong></dd>
+                  <dd><strong>{money(activeScenario.result.maturity_value, currency)}</strong></dd>
                 </div>
                 <div>
                   <dt>{t.potential_gain_loss}</dt>
@@ -265,7 +314,6 @@ export default function ClientInsights({ insights, language = "EN" }) {
           ))}
         </div>
       </section>
-
     </div>
   );
 }
