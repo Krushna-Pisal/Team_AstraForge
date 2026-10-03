@@ -112,7 +112,7 @@ export default function ProductSimulator() {
           ))}
         </div>
       </section>
-      <section className="page-stack">
+      <section id="new-product" className="page-stack">
         <h2>Add a product</h2>
         <div className="product-grid">
           {PRODUCTS.map(({ id, title, icon: Icon, description }) => (

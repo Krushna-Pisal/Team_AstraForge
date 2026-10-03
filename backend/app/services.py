@@ -51,19 +51,29 @@ def configuration(req):
         ("product_type", "eln_config", "dcd_config", "cpn_config")})
 
 
-def derive_product_risk(req: ProductConfiguration, ticker="^NSEI", backtest=None):
+def derive_product_risk(req: ProductConfiguration, ticker="^NSEI", backtest=None, scenarios=None):
     cfg = req.config
     protection = cfg.protection_pct if req.product_type == "CPN" else 0
     # Coupon is not subtracted: this conservative gross-principal bound excludes issuer default.
     max_loss = 100 - protection
     if req.product_type == "DCD" and cfg.conversion_condition == "FX_AT_OR_BELOW_STRIKE":
         max_loss = 0  # Under this quote convention, converted principal value is >= deposit.
+    stress_loss = None
+    if scenarios is not None:
+        negative_returns = [-result.return_pct for result in scenarios.results if result.return_pct < 0]
+        stress_loss = max(negative_returns, default=0.0)
+    historical_loss = max(0, -backtest.metrics.worst_return) if backtest else None
+    assessed_loss = max(
+        (value for value in (stress_loss, historical_loss) if value is not None),
+        default=None,
+    )
     return ProductRiskCharacteristics(product_type=req.product_type, product_reference=f"{req.product_type}:{ticker}",
         tenor_years=cfg.tenor_years, underlying_asset=ticker, issuer="Unspecified illustrative issuer",
         principal_protection_pct=protection, max_contractual_loss_pct=max_loss, coupon_pct_pa=cfg.coupon_pct_pa or 0,
         upside_participation=cfg.participation_rate > 0 if req.product_type == "CPN" else False,
         currency_conversion_risk=req.product_type == "DCD",
-        historical_worst_loss_pct=max(0, -backtest.metrics.worst_return) if backtest else None)
+        stress_loss_pct=stress_loss, historical_worst_loss_pct=historical_loss,
+        assessed_loss_pct=assessed_loss)
 
 
 def history_or_error(req):
@@ -83,7 +93,7 @@ def run_simulation(req: SimulationRequest) -> SimulationBundle:
     curve = simulate_scenarios(ScenarioRequest(**config.model_dump(), custom_scenarios=list(range(-90, 81))))
     history, error = history_or_error(req)
     return SimulationBundle(payoff=payoff, scenarios=scenarios, curve=curve, backtest=history, historical_error=error,
-        product_risk=derive_product_risk(config, req.ticker, history))
+        product_risk=derive_product_risk(config, req.ticker, history, scenarios))
 
 
 def evaluate_client(req: EvaluateRequest) -> EvaluationBundle:
@@ -95,10 +105,14 @@ def evaluate_client(req: EvaluateRequest) -> EvaluationBundle:
         raise DomainError("CURRENCY_MISMATCH", "Client portfolio and product investment must use the same currency; automatic portfolio FX translation is not supported.")
     if abs(amount - req.client.proposed_investment_amount) > 0.01:
         raise DomainError("INVESTMENT_MISMATCH", "Client proposed investment must match the configured product amount.")
+    scenarios = simulate_scenarios(ScenarioRequest(**config.model_dump()))
     history, error = history_or_error(req)
-    risk = derive_product_risk(config, req.ticker, history)
+    risk = derive_product_risk(config, req.ticker, history, scenarios)
     assessment = run_suitability_assessment(SuitabilityRequest(client=req.client, product_risk=risk))
-    return EvaluationBundle(assessment=assessment, product_risk=risk, historical_error=error)
+    result = EvaluationBundle(assessment=assessment, product_risk=risk, historical_error=error)
+    from app.assessment_records import save_record
+    save_record(req, result, history)
+    return result
 
 
 def validate_product_market(req):

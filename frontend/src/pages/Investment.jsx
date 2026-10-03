@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAssessment } from "../state/AssessmentContext";
-import { api } from "../lib/api";
+import { api, money } from "../lib/api";
 import {
   PageTitle,
-  Field,
   ErrorNotice,
   EmptyState,
   Steps,
@@ -13,7 +12,7 @@ export default function Investment() {
   const { state, dispatch } = useAssessment();
   const navigate = useNavigate();
   const saved = state.products.find((p) => p.id === state.selectedProductId);
-  const [amount, setAmount] = useState("");
+  const amount = state.client?.proposed_investment_amount;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   if (!state.client)
@@ -32,13 +31,13 @@ export default function Investment() {
         action="Choose product"
       />
     );
+  if (!amount) return <EmptyState title="Enter the customer's investment amount once" to="/simulator/budget" action="Add amount & currency"/>;
   async function submit(e) {
     e.preventDefault();
     setError("");
     const client = state.client;
     const investment = Number(amount);
     if (
-      client.total_portfolio_value &&
       client.portfolio_currency !== saved.template.currency
     )
       return setError(
@@ -99,7 +98,7 @@ export default function Investment() {
   return (
     <div className="page-stack">
       <PageTitle
-        title="Investment amount"
+        title="Use this product"
         description="Use the saved terms for this customer. The reference price will be loaded again."
       />
       <Steps current={1} />
@@ -119,17 +118,9 @@ export default function Investment() {
         </div>
       </section>
       <form className="card section-card page-stack" onSubmit={submit}>
-        <Field label={"Amount to invest (" + saved.template.currency + ")"}>
-          <input
-            type="number"
-            required
-            min={0.01}
-            max={1e15}
-            step="any"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </Field>
+        <h2>{money(amount, state.client.portfolio_currency)}</h2>
+        <p>This is the amount already entered for the customer.</p>
+        <Link to="/simulator/budget" className="text-link">Edit amount & currency</Link>
         <p className="muted">
           Results start with an unchanged-market example and show what happens
           if prices rise or fall. This is not a guaranteed return.

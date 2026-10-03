@@ -17,6 +17,7 @@ const empty = {
   products: [],
   selectedProductId: null,
   clientDraft: null,
+  insights: {},
 };
 function initial() {
   try {
@@ -27,7 +28,13 @@ function initial() {
   }
 }
 function reducer(state, action) {
+  // New deterministic inputs invalidate both audience explanations.
+  if (["client", "budget", "product", "save_product", "select_product", "start_assessment", "simulation", "evaluation", "restore"].includes(action.type)) state = {...state, insights: {}};
   switch (action.type) {
+    case "insights":
+      return action.assessmentId === state.evaluation?.assessment.assessment_id ? {...state, insights: {...state.insights, [action.audience]: action.value}} : state;
+    case "budget":
+      return {...state, client: {...state.client, ...action.value}, product: null, simulation: null, evaluation: null};
     case "save_product":
       return {
         ...state,

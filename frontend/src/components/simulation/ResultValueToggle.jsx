@@ -1,0 +1,1 @@
+export default function ResultValueToggle({value,onChange}){return <div className="segmented" role="group" aria-label="Result display units">{[["percentage","Percentage"],["money","Money value"]].map(([key,label])=><button key={key} className={value===key?"active":""} aria-pressed={value===key} onClick={()=>onChange(key)}>{label}</button>)}</div>;}

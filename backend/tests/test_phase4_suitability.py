@@ -23,7 +23,9 @@ def create_base_product(type="ELN", tenor=1.0, worst_loss=30.0, early_exit=False
         underlying_asset="NIFTY50",
         issuer="BankA",
         max_contractual_loss_pct=100.0,
+        stress_loss_pct=worst_loss,
         historical_worst_loss_pct=worst_loss,
+        assessed_loss_pct=worst_loss,
         early_exit_available=early_exit
     )
 
@@ -70,11 +72,52 @@ def test_loss_tolerance():
     
     # Missing data
     prod.historical_worst_loss_pct = None
+    prod.stress_loss_pct = None
+    prod.assessed_loss_pct = None
     prod.max_contractual_loss_pct = None
     req = SuitabilityRequest(client=client, product_risk=prod)
     res = run_suitability_assessment(req)
     dim = next(d for d in res.dimensions if d.dimension == "LOSS_TOLERANCE")
     assert dim.status == "INSUFFICIENT_DATA"
+
+def test_loss_tolerance_uses_assessed_downside_and_keeps_contractual_warning():
+    client = create_base_client(max_loss=20.0)
+    prod = create_base_product(worst_loss=18.0)
+    prod.stress_loss_pct = 15.0
+    prod.assessed_loss_pct = 18.0
+    res = run_suitability_assessment(SuitabilityRequest(client=client, product_risk=prod))
+    dim = next(d for d in res.dimensions if d.dimension == "LOSS_TOLERANCE")
+    assert dim.status == "PASS"
+    assert dim.relevant_input_values["assessed_loss_pct"] == 18.0
+    assert "contractual tail-risk disclosure" in dim.explanation
+
+def test_loss_tolerance_uses_stress_when_historical_is_unavailable():
+    client = create_base_client(max_loss=20.0)
+    prod = create_base_product(worst_loss=None)
+    prod.stress_loss_pct = 25.0
+    prod.assessed_loss_pct = 25.0
+    res = run_suitability_assessment(SuitabilityRequest(client=client, product_risk=prod))
+    dim = next(d for d in res.dimensions if d.dimension == "LOSS_TOLERANCE")
+    assert dim.status == "MISMATCH"
+
+def test_loss_tolerance_uses_historical_when_stress_is_unavailable():
+    client = create_base_client(max_loss=20.0)
+    prod = create_base_product(worst_loss=18.0)
+    prod.stress_loss_pct = None
+    prod.assessed_loss_pct = 18.0
+    res = run_suitability_assessment(SuitabilityRequest(client=client, product_risk=prod))
+    dim = next(d for d in res.dimensions if d.dimension == "LOSS_TOLERANCE")
+    assert dim.status == "PASS"
+
+def test_loss_tolerance_requires_evidence_when_both_downside_sources_are_unavailable():
+    client = create_base_client(max_loss=20.0)
+    prod = create_base_product(worst_loss=None)
+    prod.stress_loss_pct = None
+    prod.assessed_loss_pct = None
+    res = run_suitability_assessment(SuitabilityRequest(client=client, product_risk=prod))
+    dim = next(d for d in res.dimensions if d.dimension == "LOSS_TOLERANCE")
+    assert dim.status == "INSUFFICIENT_DATA"
+    assert "not used as a substitute" in dim.explanation
 
 def test_concentration():
     # Portfolio = 1M, Existing = 0, Proposed = 400K -> 40% (Mismatch)
