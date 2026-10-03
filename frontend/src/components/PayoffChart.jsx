@@ -1,13 +1,3 @@
-/**
- * PayoffChart.jsx
- *
- * Recharts line chart showing investor return % vs underlying return %.
- * Supports two series for daily monitoring ELNs:
- * - curve_not_breached (Blue line: barrier never touched)
- * - curve_breached (Red line: barrier touched during path)
- * Reference lines drawn at barrier, strike, and zero.
- */
-
 import {
   LineChart,
   Line,
@@ -16,174 +6,106 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceLine,
+  ReferenceArea,
   ResponsiveContainer,
   Legend,
-} from 'recharts';
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900 border border-slate-700 text-white rounded shadow-lg p-2.5 text-xs space-y-1">
-      <div className="text-slate-400 font-medium">Underlying Return: {label > 0 ? '+' : ''}{label}%</div>
-      {payload.map((entry, index) => (
-        <div key={index} style={{ color: entry.color }} className="font-semibold">
-          {entry.name}: {entry.value >= 0 ? '+' : ''}{entry.value?.toFixed(2)}%
-        </div>
-      ))}
-    </div>
-  );
-};
-
+} from "recharts";
+import { pct } from "../lib/api";
 export default function PayoffChart({
   curve,
-  curveNotBreached,
-  curveBreached,
   strikePct,
   barrierPct,
-  barrierMonitoring = 'daily',
-  productType = 'ELN'
+  protectionPct,
 }) {
-  const isDailyEln = productType === 'ELN' && barrierMonitoring === 'daily' && curveNotBreached && curveBreached;
-
-  // Prepare unified dataset if two series exist
-  let chartData = curve || [];
-  if (isDailyEln && curveNotBreached.length === curveBreached.length) {
-    chartData = curveNotBreached.map((pt, i) => ({
-      underlying_return_pct: pt.underlying_return_pct,
-      return_not_breached: pt.investor_return_pct,
-      return_breached: curveBreached[i]?.investor_return_pct
-    }));
-  }
-
-  if (!chartData || chartData.length === 0) {
-    return <div className="h-80 bg-slate-100 animate-pulse rounded-lg" />;
-  }
-
   return (
-    <div className="w-full space-y-2">
-      <ResponsiveContainer width="100%" height={340}>
+    <div
+      className="chart-wrap"
+      role="img"
+      aria-label="Payoff chart comparing investor return with underlying movement; exact values appear in the scenario table."
+    >
+      <ResponsiveContainer width="100%" height={350}>
         <LineChart
-          data={chartData}
-          margin={{ top: 12, right: 24, left: 8, bottom: 12 }}
+          data={curve}
+          margin={{ top: 25, right: 24, left: 4, bottom: 18 }}
         >
           <CartesianGrid
-            strokeDasharray="4 4"
-            stroke="rgba(99,130,185,0.12)"
+            stroke="#253349"
+            strokeDasharray="3 5"
             vertical={false}
           />
           <XAxis
             dataKey="underlying_return_pct"
             type="number"
-            domain={['auto', 'auto']}
-            tickFormatter={v => `${v > 0 ? '+' : ''}${v}%`}
-            tick={{ fill: '#7a91b0', fontSize: 11 }}
-            axisLine={{ stroke: 'rgba(99,130,185,0.2)' }}
-            tickLine={false}
+            domain={[-90, 80]}
+            tickFormatter={(v) => v + "%"}
+            stroke="#8b9ab0"
+            fontSize={11}
             label={{
-              value: 'Underlying Return (%)',
-              position: 'insideBottom',
-              offset: -6,
-              style: { fill: '#7a91b0', fontSize: 11 },
+              value: "Underlying return (%)",
+              position: "insideBottom",
+              offset: -12,
+              fill: "#8b9ab0",
+              fontSize: 11,
             }}
           />
           <YAxis
-            tickFormatter={v => `${v > 0 ? '+' : ''}${v}%`}
-            tick={{ fill: '#7a91b0', fontSize: 11 }}
-            axisLine={false}
-            tickLine={false}
-            width={54}
-            label={{
-              value: 'Investor Return (%)',
-              angle: -90,
-              position: 'insideLeft',
-              offset: 12,
-              style: { fill: '#7a91b0', fontSize: 11 },
+            tickFormatter={(v) => v + "%"}
+            stroke="#8b9ab0"
+            fontSize={11}
+            width={56}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "#132033",
+              border: "1px solid #34445a",
+              borderRadius: 10,
+              color: "#e7edf7",
             }}
+            formatter={(v) => pct(v)}
+            labelFormatter={(v) => "Underlying: " + pct(v)}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend wrapperStyle={{ paddingTop: 10, fontSize: 12 }} />
-
-          {/* Zero reference line */}
-          <ReferenceLine
-            y={0}
-            stroke="rgba(255,255,255,0.2)"
-            strokeDasharray="4 2"
-            strokeWidth={1.5}
-          />
-
-          {/* Strike reference */}
-          {strikePct && (
+          <Legend verticalAlign="top" height={32} />
+          <ReferenceArea y1={-100} y2={0} fill="#df806d" fillOpacity={0.045} />
+          <ReferenceLine y={0} stroke="#69788d" />
+          {strikePct != null && (
             <ReferenceLine
               x={strikePct - 100}
-              stroke="#3b82f6"
-              strokeDasharray="6 3"
-              strokeWidth={1.5}
-              label={{
-                value: `Strike ${strikePct}%`,
-                position: 'top',
-                fill: '#3b82f6',
-                fontSize: 10,
-              }}
+              stroke="#8baac8"
+              strokeDasharray="5 5"
+              label={{ value: "Strike", fill: "#8baac8", fontSize: 11 }}
             />
           )}
-
-          {/* Barrier reference */}
-          {barrierPct && (
+          {barrierPct != null && (
             <ReferenceLine
               x={barrierPct - 100}
-              stroke="#ef4444"
-              strokeDasharray="6 3"
-              strokeWidth={1.5}
+              stroke="#e2a66d"
+              strokeDasharray="5 5"
+              label={{ value: "Barrier", fill: "#e2a66d", fontSize: 11 }}
+            />
+          )}
+          {protectionPct != null && (
+            <ReferenceLine
+              y={protectionPct - 100}
+              stroke="#9eafc5"
+              strokeDasharray="5 5"
               label={{
-                value: `Barrier ${barrierPct}%`,
-                position: 'top',
-                fill: '#ef4444',
+                value: "Protected base (excl. coupon)",
+                fill: "#9eafc5",
                 fontSize: 10,
               }}
             />
           )}
-
-          {isDailyEln ? (
-            <>
-              <Line
-                name="Barrier Never Touched"
-                type="monotone"
-                dataKey="return_not_breached"
-                stroke="#3b82f6"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, fill: '#3b82f6' }}
-              />
-              <Line
-                name="Barrier Touched (Breached)"
-                type="monotone"
-                dataKey="return_breached"
-                stroke="#ef4444"
-                strokeWidth={2.5}
-                strokeDasharray="4 2"
-                dot={false}
-                activeDot={{ r: 5, fill: '#ef4444' }}
-              />
-            </>
-          ) : (
-            <Line
-              name="Payoff Return"
-              type="monotone"
-              dataKey="investor_return_pct"
-              stroke="#10b981"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5, fill: '#10b981' }}
-            />
-          )}
+          <Line
+            name="Investor return"
+            type="linear"
+            dataKey="investor_return_pct"
+            stroke="#9abada"
+            strokeWidth={2.5}
+            dot={false}
+            animationDuration={350}
+          />
         </LineChart>
       </ResponsiveContainer>
-
-      {isDailyEln && (
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded p-2.5 text-xs text-slate-300 text-center">
-          📌 <span className="font-medium">Daily Monitoring Note:</span> The barrier is checked every day. If the index touched the barrier at any point, the red line applies.
-        </div>
-      )}
     </div>
   );
 }

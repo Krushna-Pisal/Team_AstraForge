@@ -9,10 +9,16 @@ from __future__ import annotations
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.domain import ErrorResponse
+from app.errors import install_error_handlers
+from app.phase3_market_data import get_market_data, MarketHistory, MarketInstrument, MARKETS
+from app.services import SimulationRequest, SimulationBundle, EvaluateRequest, EvaluationBundle, run_simulation, evaluate_client
+from app.phase3_market_data import SearchResponse, search_underlyings
+from app.products import ProductTemplate, ValidatedProduct, PrepareProductRequest, PreparedProduct, validate_product, prepare_product
 
 from app.models import ProductInput, PayoffResponse, PriceInfo
 from app.market_data import get_price_info, get_s0
-from app.payoff_engine import build_payoff_curve, build_eln_two_curves, run_scenarios, get_formula_text, DEFAULT_SHOCKS
+from app.payoff_engine import build_payoff_curve, run_scenarios, get_formula_text, DEFAULT_SHOCKS
 from app.phase2_models import (
     ElnPayoffRequest, ElnPayoffResponse,
     DcdPayoffRequest, DcdPayoffResponse,
@@ -21,9 +27,11 @@ from app.phase2_models import (
 from app.phase2_engines import calculate_eln_payoff, calculate_dcd_payoff, calculate_cpn_payoff
 app = FastAPI(
     title="Suitability-Aware Payoff Simulator",
-    description="Payoff simulation API for Structured Investment Products (Phase 0 – ELN only)",
-    version="0.1.0",
+    description="Deterministic ELN, DCD and CPN payoff, historical analysis and suitability. Percentages use percentage points.",
+    version="1.0.0",
+    responses={status: {"model": ErrorResponse} for status in (422, 404, 500, 503)},
 )
+install_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,13 +50,13 @@ def health_check():
     return {"status": "ok"}
 
 
-@app.get("/underlyings", tags=["market"])
+@app.get("/underlyings", tags=["legacy"], deprecated=True)
 def list_underlyings() -> list[str]:
     """Return the list of supported underlyings."""
     return ["NIFTY50"]
 
 
-@app.get("/prices/{underlying}", response_model=PriceInfo, tags=["market"])
+@app.get("/prices/{underlying}", response_model=PriceInfo, tags=["legacy"], deprecated=True)
 def get_prices(underlying: str) -> PriceInfo:
     """
     Return price metadata for a given underlying.
@@ -64,7 +72,7 @@ def get_prices(underlying: str) -> PriceInfo:
     return PriceInfo(**info)
 
 
-@app.post("/payoff", response_model=PayoffResponse, tags=["payoff"])
+@app.post("/payoff", response_model=PayoffResponse, tags=["legacy"], deprecated=True)
 def compute_payoff_api(product: ProductInput) -> PayoffResponse:
     """
     Compute the ELN payoff curve and scenario table.
@@ -79,7 +87,6 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
     """
     s0 = get_s0(product.underlying)
     curve_data = build_payoff_curve(product, CURVE_RATIO_RANGE)
-    two_curves = build_eln_two_curves(product, CURVE_RATIO_RANGE)
     scenario_data = run_scenarios(product, DEFAULT_SHOCKS)
     formula_text = get_formula_text(product)
 
@@ -91,16 +98,6 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
             {"underlying_return_pct": p["underlying_return_pct"],
              "investor_return_pct": p["investor_return_pct"]}
             for p in curve_data
-        ],
-        curve_not_breached=[
-            {"underlying_return_pct": p["underlying_return_pct"],
-             "investor_return_pct": p["investor_return_pct"]}
-            for p in two_curves["curve_not_breached"]
-        ],
-        curve_breached=[
-            {"underlying_return_pct": p["underlying_return_pct"],
-             "investor_return_pct": p["investor_return_pct"]}
-            for p in two_curves["curve_breached"]
         ],
         scenarios=[
             {
@@ -139,11 +136,39 @@ from app.phase3_simulation import simulate_scenarios, run_backtest
 from app.phase3_market_data import get_historical_market_data
 from typing import Any
 
-@app.get("/api/market-data/history", tags=["market", "phase3"])
-def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> list[dict[str, Any]]:
-    """Retrieve historical market data using yfinance."""
-    df = get_historical_market_data(ticker, period)
-    return df.to_dict(orient="records")
+@app.get("/api/market-data/history", response_model=MarketHistory, tags=["market"])
+def get_market_history(ticker: str = "^NSEI", period: str = "10y") -> MarketHistory:
+    return get_market_data(ticker, period)
+
+
+@app.get("/api/market-data/catalog", response_model=list[MarketInstrument], tags=["market"])
+def get_market_catalog() -> list[MarketInstrument]:
+    return [{"ticker": key, **value} for key, value in MARKETS.items()]
+
+
+@app.get("/api/market-data/search", response_model=SearchResponse, tags=["market"])
+def search_market_symbols(q: str = "", kind: str = "equity"):
+    return search_underlyings(q, kind)
+
+
+@app.post("/api/products/validate", response_model=ValidatedProduct, tags=["products"])
+def validate_product_template(req: ProductTemplate):
+    return validate_product(req)
+
+
+@app.post("/api/products/prepare", response_model=PreparedProduct, tags=["products"])
+def prepare_saved_product(req: PrepareProductRequest):
+    return prepare_product(req)
+
+
+@app.post("/api/simulation/run", response_model=SimulationBundle, tags=["services"])
+def simulation_bundle(req: SimulationRequest):
+    return run_simulation(req)
+
+
+@app.post("/api/suitability/evaluate", response_model=EvaluationBundle, tags=["services"])
+def evaluate_configured_product(req: EvaluateRequest):
+    return evaluate_client(req)
 
 @app.post("/api/scenarios/simulate", response_model=ScenarioResponse, tags=["simulation", "phase3"])
 def simulate_scenarios_api(req: ScenarioRequest) -> ScenarioResponse:
@@ -156,48 +181,10 @@ def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
     return run_backtest(req)
 
 # --- Phase 4 Endpoints ---
-import os
-import json
-from app.phase4_models import SuitabilityRequest, SuitabilityResponse, AuditRecord
-from app.phase4_suitability import run_suitability_assessment, audit_store
-
-CLIENTS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "mock_clients.json")
-
-
-@app.get("/api/clients", tags=["clients"])
-def get_mock_clients() -> list[dict[str, Any]]:
-    """Return pre-configured mock client profiles for demo and testing."""
-    if os.path.exists(CLIENTS_FILE):
-        with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-@app.get("/api/audit", tags=["audit"])
-def list_audit_records() -> list[dict[str, Any]]:
-    """Retrieve all suitability assessment audit trail records (newest first)."""
-    records = audit_store.list_all()
-    return [r.model_dump() for r in records]
-
-
-@app.get("/api/audit/{assessment_id}", tags=["audit"])
-def get_audit_record(assessment_id: str) -> dict[str, Any]:
-    """Retrieve a specific audit trail record by its assessment_id."""
-    record = audit_store.get(assessment_id)
-    if not record:
-        raise HTTPException(status_code=404, detail=f"Audit record {assessment_id} not found")
-    return record.model_dump()
-
+from app.phase4_models import SuitabilityRequest, SuitabilityResponse
+from app.phase4_suitability import run_suitability_assessment
 
 @app.post("/api/suitability/check", response_model=SuitabilityResponse, tags=["suitability", "phase4"])
 def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
-    try:
-        return run_suitability_assessment(req)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-# --- Phase 5 Endpoints ---
-from app.phase5_explanation.router import router as phase5_router
-app.include_router(phase5_router)
+    return run_suitability_assessment(req)
