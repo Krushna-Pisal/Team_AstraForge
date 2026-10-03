@@ -10,6 +10,7 @@ import ProductSimulator from "./pages/ProductSimulator";
 import ConfigureELN from "./pages/ConfigureELN";
 import ConfigureDCD from "./pages/ConfigureDCD";
 import ConfigureCPN from "./pages/ConfigureCPN";
+import CpnConfigure from "./pages/cpn/CpnConfigure";
 import ClientProfile from "./pages/ClientProfile";
 import Investment from "./pages/Investment";
 const SimulationResults = lazy(() => import("./pages/SimulationResults"));
@@ -30,7 +31,7 @@ export default function App() {
               <Route index element={<ProductSimulator />} />
               <Route path="eln" element={<ConfigureELN />} />
               <Route path="dcd" element={<ConfigureDCD />} />
-              <Route path="cpn" element={<ConfigureCPN />} />
+              <Route path="cpn" element={<CpnConfigure />} />
               <Route path="investment" element={<Investment />} />
               <Route
                 path="client"
