@@ -74,10 +74,13 @@ If the download fails (network issue), it automatically generates clearly-labell
 
 ---
 
-### 2. Start the Backend
+### 2. Install Dependencies & Start the Backend
 
 ```powershell
 # From the project root
+pip install -r backend/requirements.txt
+
+# Start backend server
 cd backend
 uvicorn app.main:app --reload
 ```
