@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { money, pct } from "../../lib/api";
+import { api, money, pct } from "../../lib/api";
 import { useAssessment } from "../../state/AssessmentContext";
 import { AlertTriangle, Info, FileText, CheckCircle, ShieldAlert, Download, Loader2 } from "lucide-react";
 import PayoffChart from "../PayoffChart";
@@ -8,6 +8,22 @@ import ClientReportPDF from "./ClientReportPDF";
 
 export const UI_STRINGS = {
   EN: {
+    report_title: "Client Advisory Report",
+    section_overview: "1. Investment Overview & Customer Profile",
+    customer_name: "Customer Name",
+    product_type: "Product Type",
+    underlying_asset: "Underlying Asset",
+    investment_amount: "Investment Amount",
+    section_payoff: "2. Contractual Payoff & Scenarios",
+    table_scenario: "Scenario",
+    table_maturity_value: "Maturity Value",
+    table_net_pnl: "Net P&L",
+    table_return: "Return (%)",
+    section_risks: "3. Key Risks & Important Conditions",
+    section_suitability: "4. Client Suitability Assessment",
+    section_historical: "5. Historical Market Evidence",
+    section_rm_discussion: "6. Relationship Manager Discussion Points",
+    payoff_curve_title: "Contractual Payoff Curve (Maturity Return Profile)",
     at_a_glance: "Your investment at a glance",
     explore_scenarios: "Explore what could happen to your money",
     slider_instruction: "Use the slider to see how different market conditions might affect your investment. These are illustrative scenarios, not predictions.",
@@ -29,9 +45,28 @@ export const UI_STRINGS = {
     discuss_points: "Based on your profile and this product, consider discussing these specific points:",
     cpn_name: "Capital Protected Note",
     dcd_name: "Dual Currency Deposit",
-    eln_name: "Equity Linked Note"
+    eln_name: "Equity Linked Note",
+    download_english: "English PDF",
+    download_hindi: "हिंदी PDF",
+    download_marathi: "मराठी PDF",
   },
   HI: {
+    report_title: "ग्राहक सलाहकार रिपोर्ट",
+    section_overview: "1. निवेश अवलोकन एवं ग्राहक प्रोफ़ाइल",
+    customer_name: "ग्राहक का नाम",
+    product_type: "उत्पाद का प्रकार",
+    underlying_asset: "अंतर्निहित परिसंपत्ति",
+    investment_amount: "निवेश राशि",
+    section_payoff: "2. संविदात्मक परिणाम एवं परिदृश्य",
+    table_scenario: "परिदृश्य",
+    table_maturity_value: "परिपक्वता मूल्य",
+    table_net_pnl: "शुद्ध लाभ/हानि",
+    table_return: "रिटर्न (%)",
+    section_risks: "3. प्रमुख जोखिम एवं महत्वपूर्ण शर्तें",
+    section_suitability: "4. ग्राहक उपयुक्तता मूल्यांकन",
+    section_historical: "5. ऐतिहासिक बाज़ार साक्ष्य",
+    section_rm_discussion: "6. रिलेशनशिप मैनेजर चर्चा बिंदु",
+    payoff_curve_title: "संविदात्मक अदायगी वक्र (परिपक्वता रिटर्न रूपरेखा)",
     at_a_glance: "एक नज़र में आपका निवेश",
     explore_scenarios: "जानें कि आपके पैसे का क्या हो सकता है",
     slider_instruction: "स्लाइडर का उपयोग करके देखें कि बाज़ार की विभिन्न स्थितियां आपके निवेश को कैसे प्रभावित कर सकती हैं। ये केवल उदाहरण हैं, पूर्वानुमान नहीं।",
@@ -53,9 +88,28 @@ export const UI_STRINGS = {
     discuss_points: "आपकी प्रोफ़ाइल और इस उत्पाद के आधार पर, इन विशिष्ट बिंदुओं पर चर्चा करने पर विचार करें:",
     cpn_name: "कैपिटल प्रोटेक्टेड नोट (मूलधन सुरक्षित)",
     dcd_name: "डुअल करेंसी डिपॉजिट (दोहरी मुद्रा जमा)",
-    eln_name: "इक्विटी लिंक्ड नोट"
+    eln_name: "इक्विटी लिंक्ड नोट",
+    download_english: "English PDF",
+    download_hindi: "हिंदी PDF",
+    download_marathi: "मराठी PDF",
   },
   MR: {
+    report_title: "ग्राहक सल्लागार अहवाल",
+    section_overview: "1. गुंतवणूक आढावा आणि ग्राहक माहिती",
+    customer_name: "ग्राहकाचे नाव",
+    product_type: "उत्पादनाचा प्रकार",
+    underlying_asset: "संबंधित मालमत्ता",
+    investment_amount: "गुंतवणूक रक्कम",
+    section_payoff: "2. करारातील परतावा आणि संभाव्य परिस्थिती",
+    table_scenario: "परिस्थिती",
+    table_maturity_value: "मुदतपूर्ती मूल्य",
+    table_net_pnl: "निव्वळ नफा/तोटा",
+    table_return: "परतावा (%)",
+    section_risks: "3. मुख्य जोखीम आणि महत्त्वाच्या अटी",
+    section_suitability: "4. ग्राहक उपयुक्तता मूल्यमापन",
+    section_historical: "5. ऐतिहासिक बाजार पुरावे",
+    section_rm_discussion: "6. रिलेशनशिप मॅनेजर चर्चा मुद्दे",
+    payoff_curve_title: "करारातील परतावा आलेख (मुदतपूर्ती परतावा रूपरेषा)",
     at_a_glance: "तुमची गुंतवणूक एका दृष्टिक्षेपात",
     explore_scenarios: "तुमच्या पैशांचे काय होऊ शकते ते तपासा",
     slider_instruction: "बाजारातील वेगवेगळ्या परिस्थिती तुमच्या गुंतवणुकीवर कसा परिणाम करू शकतात हे पाहण्यासाठी स्लाइडर वापरा. हे केवळ संभाव्य परिणाम आहेत, भविष्याचा अंदाज नाही.",
@@ -77,27 +131,68 @@ export const UI_STRINGS = {
     discuss_points: "तुमची प्रोफाइल आणि या उत्पादनाच्या आधारावर, या विशिष्ट मुद्द्यांवर चर्चा करण्याचा विचार करा:",
     cpn_name: "कॅपिटल प्रोटेक्टेड नोट (मुद्दल सुरक्षित)",
     dcd_name: "ड्युअल करन्सी डिपॉझिट (दुहेरी चलन ठेव)",
-    eln_name: "इक्विटी लिंक्ड नोट"
+    eln_name: "इक्विटी लिंक्ड नोट",
+    download_english: "English PDF",
+    download_hindi: "हिंदी PDF",
+    download_marathi: "मराठी PDF",
   }
 };
 
 export default function ClientInsights({ insights, language = "EN" }) {
-  const { state } = useAssessment();
+  const { state, dispatch } = useAssessment();
   const product = state.product?.config || {};
   const type = state.product?.type || "Product";
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [downloadingLang, setDownloadingLang] = useState(null);
   
   const t = UI_STRINGS[language] || UI_STRINGS.EN;
 
-  const handleDownloadPDF = async () => {
-    setIsGeneratingPdf(true);
+  const handleDownloadPDF = async (targetLang = "EN") => {
+    setDownloadingLang(targetLang);
     try {
       const clientName = state.client?.client_name || "Client";
-      const blob = await pdf(<ClientReportPDF state={state} insights={insights} language={language} t={t} />).toBlob();
+      const targetStrings = UI_STRINGS[targetLang] || UI_STRINGS.EN;
+      
+      let targetInsights = null;
+      if (targetLang === language && insights) {
+        targetInsights = insights;
+      } else if (state.insights?.[`CLIENT_${targetLang}`]?.insights) {
+        targetInsights = state.insights[`CLIENT_${targetLang}`].insights;
+      } else {
+        const assessmentId = state.evaluation?.assessment?.assessment_id || state.id;
+        if (assessmentId) {
+          try {
+            const res = await api("/api/insights/generate", {
+              body: { assessment_id: assessmentId, audience: "CLIENT", language: targetLang, retry: false }
+            });
+            if (res?.insights) {
+              targetInsights = res.insights;
+              if (dispatch) {
+                dispatch({ type: "insights", assessmentId, audience: `CLIENT_${targetLang}`, value: res });
+              }
+            }
+          } catch (e) {
+            console.warn("Could not fetch translated insights, fallback to current:", e);
+          }
+        }
+      }
+
+      if (!targetInsights) {
+        targetInsights = insights;
+      }
+
+      const blob = await pdf(
+        <ClientReportPDF
+          state={state}
+          insights={targetInsights}
+          language={targetLang}
+          t={targetStrings}
+        />
+      ).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${clientName.replace(/\s+/g, "_")}_AstraForge_Report.pdf`;
+      const langSuffix = targetLang === "EN" ? "EN" : targetLang === "HI" ? "Hindi" : "Marathi";
+      a.download = `${clientName.replace(/\s+/g, "_")}_AstraForge_Report_${langSuffix}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -105,7 +200,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
     } catch (error) {
       console.error("PDF generation failed:", error);
     } finally {
-      setIsGeneratingPdf(false);
+      setDownloadingLang(null);
     }
   };
   
@@ -122,15 +217,39 @@ export default function ClientInsights({ insights, language = "EN" }) {
 
   return (
     <div className="page-stack">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, marginRight: '4px' }}>
+          Download PDF Report:
+        </span>
         <button 
+          type="button"
           className="btn-primary" 
-          onClick={handleDownloadPDF} 
-          disabled={isGeneratingPdf}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          onClick={() => handleDownloadPDF("EN")} 
+          disabled={Boolean(downloadingLang)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 14px' }}
         >
-          {isGeneratingPdf ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-          {isGeneratingPdf ? "Generating Report..." : "Download Report"}
+          {downloadingLang === "EN" ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
+          English PDF
+        </button>
+        <button 
+          type="button"
+          className="btn-primary" 
+          onClick={() => handleDownloadPDF("HI")} 
+          disabled={Boolean(downloadingLang)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 14px', background: '#0284c7', borderColor: '#0284c7' }}
+        >
+          {downloadingLang === "HI" ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
+          हिंदी PDF (Hindi)
+        </button>
+        <button 
+          type="button"
+          className="btn-primary" 
+          onClick={() => handleDownloadPDF("MR")} 
+          disabled={Boolean(downloadingLang)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 14px', background: '#059669', borderColor: '#059669' }}
+        >
+          {downloadingLang === "MR" ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
+          मराठी PDF (Marathi)
         </button>
       </div>
       {/* Section A */}
