@@ -14,6 +14,7 @@ import PayoffChart from "../components/PayoffChart";
 import ScenarioCards from "../components/ScenarioCards";
 import CpnResultsView from "../components/cpn/CpnResultsView";
 import DcdResultsView from "../components/dcd/DcdResultsView";
+import HistoricalPriceChart from "../components/simulation/HistoricalPriceChart";
 
 export default function SimulationResults() {
   const { state, dispatch } = useAssessment();
@@ -71,6 +72,7 @@ export default function SimulationResults() {
         <Steps current={2} />
         <ErrorNotice error={error} retry={() => { setError(""); setAttempt((n) => n + 1); }} />
         <CpnResultsView product={cpnProd} />
+        <HistoricalPriceChart ticker={product.ticker || cpnProd.underlying} />
         <div className="actions">
           <Link className="btn-secondary" to="/simulator">
             Change product
@@ -115,6 +117,7 @@ export default function SimulationResults() {
         <Steps current={2} />
         <ErrorNotice error={error} retry={() => { setError(""); setAttempt((n) => n + 1); }} />
         <DcdResultsView product={dcdProd} />
+        <HistoricalPriceChart ticker={product.ticker || dcdProd.pair} />
         <div className="actions">
           <Link className="btn-secondary" to="/simulator">
             Change product
@@ -358,6 +361,7 @@ export default function SimulationResults() {
                 </div>
               ) : metrics ? (
                 <>
+                  <HistoricalPriceChart ticker={product.ticker} />
                   <div className="stats-grid four">
                     <Metric
                       label="Historical windows"

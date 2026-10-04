@@ -6,8 +6,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Briefcase,
-  UserCheck,
   AlertCircle,
   ArrowRight,
 } from "lucide-react";
@@ -21,7 +19,7 @@ export default function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("rm"); // Default to RM or Client
+  const role = "rm";
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
@@ -111,40 +109,6 @@ export default function SignupForm() {
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        {/* Role Selector Tabs */}
-        <div className="auth-form-group">
-          <label className="auth-label">Select Account Type</label>
-          <div className="auth-role-tabs">
-            <button
-              type="button"
-              className={`auth-role-tab ${role === "rm" ? "active" : ""}`}
-              onClick={() => setRole("rm")}
-            >
-              <div className="auth-role-header">
-                <span className="auth-role-title">Relationship Manager</span>
-                <Briefcase size={16} color={role === "rm" ? "#2563eb" : "#64748b"} />
-              </div>
-              <span className="auth-role-desc">
-                Advisory desk, client profiles, and product simulator.
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={`auth-role-tab ${role === "client" ? "active" : ""}`}
-              onClick={() => setRole("client")}
-            >
-              <div className="auth-role-header">
-                <span className="auth-role-title">Private Client</span>
-                <UserCheck size={16} color={role === "client" ? "#2563eb" : "#64748b"} />
-              </div>
-              <span className="auth-role-desc">
-                Personal portfolio, product payoff views, and suitability.
-              </span>
-            </button>
-          </div>
-        </div>
-
         {/* Full Name */}
         <div className="auth-form-group">
           <label className="auth-label" htmlFor="signup-name">

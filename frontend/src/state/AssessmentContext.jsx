@@ -15,6 +15,8 @@ const empty = {
   evaluation: null,
   history: [],
   products: [],
+  customers: [],
+  selectedCustomerId: null,
   selectedProductId: null,
   clientDraft: null,
   insights: {},
@@ -22,7 +24,17 @@ const empty = {
 function initial() {
   try {
     const data = JSON.parse(sessionStorage.getItem(STORAGE));
-    return data?.version === 1 ? { ...empty, ...data.state } : empty;
+    return data?.version === 1
+      ? {
+          ...empty,
+          ...data.state,
+          customers:
+            data.state.customers ||
+            (data.state.client ? [data.state.client] : []),
+          selectedCustomerId:
+            data.state.selectedCustomerId || data.state.client?.client_id || null,
+        }
+      : empty;
   } catch {
     return empty;
   }
@@ -31,10 +43,52 @@ function reducer(state, action) {
   // New deterministic inputs invalidate both audience explanations.
   if (["client", "budget", "product", "save_product", "delete_product", "select_product", "start_assessment", "simulation", "evaluation", "restore"].includes(action.type)) state = {...state, insights: {}};
   switch (action.type) {
+    case "save_customer": {
+      const customer = action.value;
+      return {
+        ...state,
+        client: customer,
+        clientDraft: null,
+        customers: [
+          ...state.customers.filter((item) => item.client_id !== customer.client_id),
+          customer,
+        ],
+        selectedCustomerId: customer.client_id,
+        product: null,
+        simulation: null,
+        evaluation: null,
+      };
+    }
+    case "select_customer": {
+      const customer = state.customers.find(
+        (item) => item.client_id === action.id,
+      );
+      if (!customer) return state;
+      return {
+        ...state,
+        client: customer,
+        clientDraft: null,
+        selectedCustomerId: customer.client_id,
+        product: null,
+        simulation: null,
+        evaluation: null,
+      };
+    }
     case "insights":
       return action.assessmentId === state.evaluation?.assessment.assessment_id ? {...state, insights: {...state.insights, [action.audience]: action.value}} : state;
     case "budget":
-      return {...state, client: {...state.client, ...action.value}, product: null, simulation: null, evaluation: null};
+      return {
+        ...state,
+        client: {...state.client, ...action.value},
+        customers: state.customers.map((customer) =>
+          customer.client_id === state.client?.client_id
+            ? {...customer, ...action.value}
+            : customer,
+        ),
+        product: null,
+        simulation: null,
+        evaluation: null,
+      };
     case "save_product":
       return {
         ...state,
@@ -69,12 +123,36 @@ function reducer(state, action) {
         evaluation: null,
       };
     case "start_assessment":
-      return { ...state, ...action.value, simulation: null, evaluation: null };
+      return {
+        ...state,
+        ...action.value,
+        customers: action.value.client
+          ? state.customers.map((customer) =>
+              customer.client_id === action.value.client.client_id
+                ? { ...customer, ...action.value.client }
+                : customer,
+            )
+          : state.customers,
+        simulation: null,
+        evaluation: null,
+      };
     case "client":
       return {
         ...state,
         client: action.value,
         clientDraft: action.draft || null,
+        customers: action.value?.client_id
+          ? state.customers.some(
+              (customer) => customer.client_id === action.value.client_id,
+            )
+            ? state.customers.map((customer) =>
+                customer.client_id === action.value.client_id
+                  ? { ...customer, ...action.value }
+                  : customer,
+              )
+            : [...state.customers, action.value]
+          : state.customers,
+        selectedCustomerId: action.value?.client_id || null,
         product: null,
         simulation: null,
         evaluation: null,
@@ -113,6 +191,18 @@ function reducer(state, action) {
       return {
         ...state,
         client: action.value.client,
+        customers: state.customers.some(
+          (customer) => customer.client_id === action.value.client?.client_id,
+        )
+          ? state.customers.map((customer) =>
+              customer.client_id === action.value.client?.client_id
+                ? action.value.client
+                : customer,
+            )
+          : action.value.client
+            ? [...state.customers, action.value.client]
+            : state.customers,
+        selectedCustomerId: action.value.client?.client_id || null,
         clientDraft: null,
         selectedProductId: action.value.product?.savedProductId || null,
         product: action.value.product,
@@ -120,7 +210,12 @@ function reducer(state, action) {
         evaluation: action.value.evaluation,
       };
     case "new":
-      return { ...empty, products: state.products, history: state.history };
+      return {
+        ...empty,
+        products: state.products,
+        customers: state.customers,
+        history: state.history,
+      };
     default:
       return state;
   }

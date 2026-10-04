@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import TopNavbar from "./TopNavbar";
+import AssessmentContextBar from "./AssessmentContextBar";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -9,6 +10,7 @@ export default function MainLayout() {
       <AppSidebar />
       <div className="workspace">
         <TopNavbar />
+        <AssessmentContextBar />
         <main id="main-content">
           <div key={location.pathname} className="page-enter">
             <Outlet />

@@ -237,6 +237,15 @@ fieldset {
   color: #b6cfe7;
   background: #1b2b3d;
 }
+
+.brand-logo {
+  display: block;
+  width: 190px;
+  height: 72px;
+  object-fit: contain;
+  object-position: left center;
+  mix-blend-mode: multiply;
+}
 .nav-caption {
   font-size: 9px;
   color: #657991;

@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRight, ShieldCheck, Cpu, LineChart, Lock } from "lucide-react";
+import { ShieldCheck, Cpu, LineChart, Lock } from "lucide-react";
 import "../auth.css";
 
 export default function AuthLayout({ children }) {
@@ -8,13 +8,7 @@ export default function AuthLayout({ children }) {
       {/* Brand & Value Proposition Hero Panel */}
       <div className="auth-brand-panel">
         <div className="auth-brand-header">
-          <div className="auth-brand-icon">
-            <ArrowUpRight size={26} strokeWidth={2.5} />
-          </div>
-          <div className="auth-brand-name">
-            AstraForge
-            <span className="auth-brand-sub">Private Wealth Intelligence</span>
-          </div>
+          <img className="auth-brand-logo" src="/astraforge-logo.png" alt="AstraForge" />
         </div>
 
         <div className="auth-brand-content">

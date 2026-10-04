@@ -38,6 +38,10 @@ export default function ClientProfile() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const set = (key, value) => setProfile((p) => ({ ...p, [key]: value }));
+  function chooseCustomer(customer) {
+    dispatch({ type: "select_customer", id: customer.client_id });
+    navigate("/simulator/budget");
+  }
   const number = (key, title, min, max, required = true, hint) => (
     <Field label={title} hint={hint}>
       <input
@@ -64,8 +68,7 @@ export default function ClientProfile() {
     if (exposureKeys.some((k) => profile[k] !== "" && !total))
       return setError("Add total investments when entering existing holdings.");
     dispatch({
-      type: "client",
-      draft: profile,
+      type: "save_customer",
       value: {
         ...profile,
         client_name: profile.client_name.trim(),
@@ -88,6 +91,54 @@ export default function ClientProfile() {
         description="Answer six short questions, then enter the amount once before choosing or discovering products."
       />
       <Steps current={0} />
+      {state.customers.length > 0 && (
+        <section className="card section-card page-stack">
+          <div className="customer-list-heading">
+            <div>
+              <h2>Existing customers</h2>
+              <p className="muted">
+                Select a saved customer to continue their assessment, or edit
+                their profile below.
+              </p>
+            </div>
+            <span className="badge">{state.customers.length} saved</span>
+          </div>
+          <div className="customer-list">
+            {state.customers.map((customer) => (
+              <article
+                className={`customer-card ${
+                  customer.client_id === state.client?.client_id ? "selected" : ""
+                }`}
+                key={customer.client_id}
+              >
+                <div>
+                  <strong>{customer.client_name}</strong>
+                  <small>
+                    {customer.risk_appetite || "Risk not set"} ·{" "}
+                    {customer.investment_objective || "Goal not set"}
+                  </small>
+                </div>
+                <div className="customer-card-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => chooseCustomer(customer)}
+                  >
+                    Use customer
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setProfile({...defaults, ...customer})}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
       <form className="page-stack" onSubmit={submit}>
         <section className="card section-card">
           <h2>About the customer</h2>
