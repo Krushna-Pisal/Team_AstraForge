@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",
+    "@supabase/supabase-js": "^2.109.0",
     "@tailwindcss/postcss": "^4.3.3",
     "autoprefixer": "^10.6.1",
     "clsx": "^2.1.1",
