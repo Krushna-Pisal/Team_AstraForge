@@ -53,15 +53,23 @@ def generate_insights(req: InsightRequest):
             return _cache[fingerprint].model_copy(deep=True,update={"cached":True})
         mode="fallback"
         document=fallback
+        active_model=None
         if key and model:
-            try:
-                document=apply_choices(fallback,validate_choices(call_gemini(payload,key,model),req.audience,catalog),catalog)
-                mode="ai"
-            except Exception:
-                # No raw provider errors, prompts or secrets are returned/logged.
-                document=fallback
+            candidates = [model]
+            for fallback_m in ["gemini-3.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.7-flash"]:
+                if fallback_m not in candidates:
+                    candidates.append(fallback_m)
+            for m in candidates:
+                try:
+                    document=apply_choices(fallback,validate_choices(call_gemini(payload,key,m),req.audience,catalog),catalog)
+                    mode="ai"
+                    active_model=m
+                    break
+                except Exception:
+                    # Try next candidate if rate-limited or unavailable
+                    continue
         result=InsightResponse(mode=mode,ai_available=mode=="ai",insights=document,
-            prompt_version=INSIGHTS_PROMPT_VERSION,model=model if mode=="ai" else None,
+            prompt_version=INSIGHTS_PROMPT_VERSION,model=active_model if mode=="ai" else None,
             generated_at=datetime.now(timezone.utc).isoformat(),fingerprint=fingerprint,
             notice=None if mode=="ai" else "AI-enhanced explanation is unavailable. Showing standard explanation.")
         _cache[fingerprint]=result.model_copy(deep=True)
