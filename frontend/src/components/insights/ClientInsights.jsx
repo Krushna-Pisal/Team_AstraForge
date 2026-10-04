@@ -6,7 +6,7 @@ import PayoffChart from "../PayoffChart";
 import { pdf } from "@react-pdf/renderer";
 import ClientReportPDF from "./ClientReportPDF";
 
-const UI_STRINGS = {
+export const UI_STRINGS = {
   EN: {
     at_a_glance: "Your investment at a glance",
     explore_scenarios: "Explore what could happen to your money",
