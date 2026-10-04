@@ -95,6 +95,30 @@ export default function Investment() {
       setBusy(false);
     }
   }
+  const isCurrencyMismatch =
+    state.client && saved && state.client.portfolio_currency !== saved.template.currency;
+
+  function alignCurrencyToProduct() {
+    setError("");
+    const targetCurrency = saved.template.currency;
+    const investment = Number(amount);
+    dispatch({
+      type: "client",
+      draft: {
+        ...state.client,
+        portfolio_currency: targetCurrency,
+      },
+      value: {
+        ...state.client,
+        portfolio_currency: targetCurrency,
+        total_portfolio_value: Math.max(
+          state.client.total_portfolio_value || investment,
+          investment,
+        ),
+      },
+    });
+  }
+
   return (
     <div className="page-stack">
       <PageTitle
@@ -120,13 +144,49 @@ export default function Investment() {
       <form className="card section-card page-stack" onSubmit={submit}>
         <h2>{money(amount, state.client.portfolio_currency)}</h2>
         <p>This is the amount already entered for the customer.</p>
-        <Link to="/simulator/budget" className="text-link">Edit amount & currency</Link>
+        <Link to="/simulator/budget" className="text-link">
+          Edit amount & currency
+        </Link>
         <p className="muted">
           Results start with an unchanged-market example and show what happens
           if prices rise or fall. This is not a guaranteed return.
         </p>
+        {isCurrencyMismatch && (
+          <div
+            className="notice warning"
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+          >
+            <div>
+              <strong>Currency Mismatch:</strong> Customer profile is set to{" "}
+              <strong>{state.client.portfolio_currency}</strong>, but this{" "}
+              {saved.template.product_type} deposits in{" "}
+              <strong>{saved.template.currency}</strong>.
+              <br />
+              <small className="muted">
+                Dual Currency Deposits require deposit funds in the product's base
+                currency ({saved.template.currency}).
+              </small>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={alignCurrencyToProduct}
+              >
+                Switch customer to {saved.template.currency} & continue
+              </button>
+              <Link to="/simulator/budget" className="btn-secondary">
+                Edit amount & currency
+              </Link>
+            </div>
+          </div>
+        )}
         <ErrorNotice error={error} />
-        <button type="submit" className="btn-primary" disabled={busy}>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={busy || isCurrencyMismatch}
+        >
           {busy ? "Preparing assessment…" : "View results"}
         </button>
       </form>
