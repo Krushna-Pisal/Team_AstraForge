@@ -13,27 +13,53 @@ export default function Reports() {
   const navigate = useNavigate();
   const [downloadingId, setDownloadingId] = useState(null);
 
-  async function handleDownload(reportState, reportId, clientName) {
-    setDownloadingId(reportId);
+  async function handleDownload(reportState, reportId, clientName, lang = "EN") {
+    const downloadKey = `${reportId}_${lang}`;
+    setDownloadingId(downloadKey);
     try {
-      const insights = reportState.insights?.Client || {
-        executive_summary: "Investment suitability assessment and structured product payoff report.",
-        investment_summary: [],
-        scenario_insights: [],
-        suitability_insight: { headline: "", rationale: "", warnings: [] },
-      };
+      const assessmentId = reportState.evaluation?.assessment?.assessment_id || reportState.id;
+      let insights =
+        reportState.insights?.[`CLIENT_${lang}`]?.insights ||
+        (lang === "EN" ? reportState.insights?.Client || reportState.insights?.CLIENT_EN?.insights : null);
+
+      if (!insights && assessmentId) {
+        try {
+          const res = await api("/api/insights/generate", {
+            body: { assessment_id: assessmentId, audience: "CLIENT", language: lang, retry: false },
+          });
+          if (res?.insights) {
+            insights = res.insights;
+          }
+        } catch (fetchErr) {
+          console.warn("Could not fetch translated insights, falling back:", fetchErr);
+        }
+      }
+
+      if (!insights) {
+        insights = reportState.insights?.Client || reportState.insights?.CLIENT_EN?.insights || {
+          executive_summary: "Investment suitability assessment and structured product payoff report.",
+          investment_summary: [],
+          scenario_insights: [],
+          suitability_insights: [],
+          key_risks: [],
+          discussion_points: [],
+          important_notes: [],
+        };
+      }
+
       const blob = await pdf(
         <ClientReportPDF
           state={reportState}
           insights={insights}
-          language="EN"
-          t={UI_STRINGS.EN}
+          language={lang}
+          t={UI_STRINGS[lang] || UI_STRINGS.EN}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${(clientName || "Client").replace(/\s+/g, "_")}_Advisory_Report.pdf`;
+      const langSuffix = lang === "EN" ? "EN" : lang === "HI" ? "Hindi" : "Marathi";
+      a.download = `${(clientName || "Client").replace(/\s+/g, "_")}_AstraForge_Report_${langSuffix}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -81,22 +107,36 @@ export default function Reports() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: "13px", color: "#94a3b8", marginRight: 2 }}>Download PDF:</span>
               <button
                 type="button"
                 className="btn-primary"
-                disabled={downloadingId === "active"}
-                onClick={() => handleDownload(state, "active", state.client.client_name)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                disabled={Boolean(downloadingId)}
+                onClick={() => handleDownload(state, "active", state.client?.client_name, "EN")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, padding: "6px 12px" }}
               >
-                {downloadingId === "active" ? (
-                  <>
-                    <Loader2 size={15} className="spin" /> Generating PDF…
-                  </>
-                ) : (
-                  <>
-                    <Download size={15} /> Download Client PDF
-                  </>
-                )}
+                {downloadingId === "active_EN" ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                English
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={Boolean(downloadingId)}
+                onClick={() => handleDownload(state, "active", state.client?.client_name, "HI")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, padding: "6px 12px", background: "#0284c7", borderColor: "#0284c7" }}
+              >
+                {downloadingId === "active_HI" ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                हिंदी (Hindi)
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={Boolean(downloadingId)}
+                onClick={() => handleDownload(state, "active", state.client?.client_name, "MR")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, padding: "6px 12px", background: "#059669", borderColor: "#059669" }}
+              >
+                {downloadingId === "active_MR" ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+                मराठी (Marathi)
               </button>
               <Link to="/simulator/insights" className="btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <FileText size={15} /> View Insights
@@ -111,7 +151,7 @@ export default function Reports() {
         <section className="page-stack">
           <h2>Reviewed Reports Archive ({state.history.length})</h2>
           <p className="muted">
-            All assessments saved in this advisory session with available PDF documentation.
+            All assessments saved in this advisory session with available PDF documentation in English, Hindi, and Marathi.
           </p>
           <div className="card table-scroll">
             <table>
@@ -122,12 +162,11 @@ export default function Reports() {
                   <th>Product</th>
                   <th>Date & Time</th>
                   <th>Suitability</th>
-                  <th style={{ textAlign: "right" }}>Documentation</th>
+                  <th style={{ textAlign: "right" }}>Documentation (EN / HI / MR)</th>
                 </tr>
               </thead>
               <tbody>
                 {state.history.map((row) => {
-                  const isDownloading = downloadingId === row.id;
                   return (
                     <tr key={row.id}>
                       <td>
@@ -151,31 +190,47 @@ export default function Reports() {
                         <Badge value={row.evaluation?.assessment?.overall_status} />
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "inline-flex", gap: 8, justifyContent: "flex-end" }}>
+                        <div style={{ display: "inline-flex", gap: 6, justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}>
                           <button
                             type="button"
                             className="btn-secondary"
-                            disabled={isDownloading}
-                            onClick={() => handleDownload(row, row.id, row.client?.client_name)}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", fontSize: 12 }}
+                            disabled={Boolean(downloadingId)}
+                            onClick={() => handleDownload(row, row.id, row.client?.client_name, "EN")}
+                            title="Download PDF in English"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 8px", fontSize: 11 }}
                           >
-                            {isDownloading ? (
-                              <>
-                                <Loader2 size={13} className="spin" /> Generating…
-                              </>
-                            ) : (
-                              <>
-                                <Download size={13} /> PDF Report
-                              </>
-                            )}
+                            {downloadingId === `${row.id}_EN` ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
+                            EN
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            disabled={Boolean(downloadingId)}
+                            onClick={() => handleDownload(row, row.id, row.client?.client_name, "HI")}
+                            title="हिंदी में डाउनलोड करें (Hindi)"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 8px", fontSize: 11, borderColor: "#0284c7", color: "#38bdf8" }}
+                          >
+                            {downloadingId === `${row.id}_HI` ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
+                            हिंदी
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            disabled={Boolean(downloadingId)}
+                            onClick={() => handleDownload(row, row.id, row.client?.client_name, "MR")}
+                            title="मराठीत डाउनलोड करा (Marathi)"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 8px", fontSize: 11, borderColor: "#059669", color: "#34d399" }}
+                          >
+                            {downloadingId === `${row.id}_MR` ? <Loader2 size={12} className="spin" /> : <Download size={12} />}
+                            मराठी
                           </button>
                           <button
                             type="button"
                             className="btn-secondary"
                             onClick={() => openAssessment(row)}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 10px", fontSize: 12 }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 8px", fontSize: 11 }}
                           >
-                            <ExternalLink size={13} /> Review
+                            <ExternalLink size={12} /> Review
                           </button>
                         </div>
                       </td>

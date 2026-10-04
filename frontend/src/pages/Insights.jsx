@@ -5,7 +5,10 @@ import { api, money } from "../lib/api";
 import { PageTitle, Loading, ErrorNotice, EmptyState, Badge } from "../components/ui/Workflow";
 import AudienceToggle from "../components/insights/AudienceToggle";
 import RMInsights from "../components/insights/RMInsights";
-import ClientInsights from "../components/insights/ClientInsights";
+import ClientInsights, { UI_STRINGS } from "../components/insights/ClientInsights";
+import { pdf } from "@react-pdf/renderer";
+import ClientReportPDF from "../components/insights/ClientReportPDF";
+import { Download, Loader2 } from "lucide-react";
 
 export default function Insights() {
   const { state, dispatch } = useAssessment();
@@ -14,10 +17,56 @@ export default function Insights() {
   const [language, setLanguage] = useState("EN");
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState("");
+  const [downloadingLang, setDownloadingLang] = useState(null);
   
   const id = state.evaluation?.assessment.assessment_id;
   const cacheKey = audience === "CLIENT" ? `CLIENT_${language}` : "RM";
   const response = state.insights?.[cacheKey];
+
+  const downloadClientPdf = async (targetLang) => {
+    setDownloadingLang(targetLang);
+    try {
+      const clientName = state.client?.client_name || "Client";
+      let targetInsights = state.insights?.[`CLIENT_${targetLang}`]?.insights;
+      if (!targetInsights && id) {
+        try {
+          const res = await api("/api/insights/generate", {
+            body: { assessment_id: id, audience: "CLIENT", language: targetLang, retry: false }
+          });
+          if (res?.insights) {
+            targetInsights = res.insights;
+            dispatch({ type: "insights", assessmentId: id, audience: `CLIENT_${targetLang}`, value: res });
+          }
+        } catch (e) {
+          console.warn("Could not fetch translated insights:", e);
+        }
+      }
+      if (!targetInsights) {
+        targetInsights = response?.insights || {};
+      }
+      const blob = await pdf(
+        <ClientReportPDF
+          state={state}
+          insights={targetInsights}
+          language={targetLang}
+          t={UI_STRINGS[targetLang] || UI_STRINGS.EN}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const langSuffix = targetLang === "EN" ? "EN" : targetLang === "HI" ? "Hindi" : "Marathi";
+      a.download = `${clientName.replace(/\s+/g, "_")}_AstraForge_Report_${langSuffix}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+    } finally {
+      setDownloadingLang(null);
+    }
+  };
 
   useEffect(() => {
     if (!id || !state.client || !state.product || !state.simulation || response) return;
@@ -105,7 +154,44 @@ export default function Insights() {
           <p>{response.insights.executive_summary}</p>
           
           {audience === "RM" ? (
-            <RMInsights insights={response.insights} />
+            <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500 }}>
+                  Download Client Report PDF:
+                </span>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => downloadClientPdf("EN")} 
+                  disabled={Boolean(downloadingLang)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '5px 12px' }}
+                >
+                  {downloadingLang === "EN" ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+                  English
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => downloadClientPdf("HI")} 
+                  disabled={Boolean(downloadingLang)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '5px 12px', borderColor: '#0284c7', color: '#38bdf8' }}
+                >
+                  {downloadingLang === "HI" ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+                  हिंदी (Hindi)
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => downloadClientPdf("MR")} 
+                  disabled={Boolean(downloadingLang)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '5px 12px', borderColor: '#059669', color: '#34d399' }}
+                >
+                  {downloadingLang === "MR" ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+                  मराठी (Marathi)
+                </button>
+              </div>
+              <RMInsights insights={response.insights} />
+            </>
           ) : (
             <ClientInsights insights={response.insights} language={language} />
           )}
