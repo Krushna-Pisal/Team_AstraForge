@@ -113,8 +113,8 @@ export default function Insights() {
       </PageTitle>
 
       {audience === "CLIENT" && (
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <label style={{ color: '#b4c1d2', fontSize: '14px' }}>Language:</label>
+        <div className="client-language-controls">
+          <span>Language:</span>
           <div className="segmented">
             <button className={language === "EN" ? "active" : ""} onClick={() => setLanguage("EN")}>English</button>
             <button className={language === "HI" ? "active" : ""} onClick={() => setLanguage("HI")}>हिन्दी</button>
