@@ -163,6 +163,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     borderBottom: "0.5pt solid #f1f5f9",
   },
+  tableDataRow: {
+    flexDirection: "row",
+    width: "100%",
+  },
   tableCol: {
     fontSize: 8.5,
     color: "#1e293b",
@@ -199,6 +203,28 @@ const styles = StyleSheet.create({
     borderTop: "0.5pt solid #e2e8f0",
     borderRight: "0.5pt solid #e2e8f0",
     borderBottom: "0.5pt solid #e2e8f0",
+  },
+  simpleExplanation: {
+    padding: 9,
+    marginBottom: 10,
+    backgroundColor: "#ecfdf9",
+    borderLeft: "3pt solid #14b8a6",
+    borderTop: "0.5pt solid #c6eeea",
+    borderRight: "0.5pt solid #c6eeea",
+    borderBottom: "0.5pt solid #c6eeea",
+    borderRadius: 4,
+  },
+  simpleTitle: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#0f766e",
+    marginBottom: 4,
+  },
+  plainNote: {
+    fontSize: 8.5,
+    color: "#334155",
+    lineHeight: 1.35,
+    marginBottom: 5,
   },
   statusTitle: {
     fontSize: 9.5,
@@ -329,6 +355,11 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
     section_suitability: isIndic ? (language === "HI" ? "4. ग्राहक उपयुक्तता मूल्यांकन" : "4. ग्राहक उपयुक्तता मूल्यमापन") : "4. Client Suitability Assessment",
     section_historical: isIndic ? (language === "HI" ? "5. ऐतिहासिक बाज़ार साक्ष्य" : "5. ऐतिहासिक बाजार पुरावे") : "5. Historical Market Evidence",
     section_rm_discussion: isIndic ? (language === "HI" ? "6. रिलेशनशिप मैनेजर चर्चा बिंदु" : "6. रिलेशनशिप मॅनेजर चर्चा मुद्दे") : "6. Relationship Manager Discussion Points",
+    simple_explanation: isIndic ? (language === "HI" ? "सरल भाषा में इसका अर्थ" : "सोप्या भाषेत याचा अर्थ") : "What this means in simple terms",
+    illustrative_examples: isIndic ? (language === "HI" ? "उदाहरण के लिए (मॉडल किया गया, पूर्वानुमान नहीं):" : "उदाहरण (मॉडेल केलेले, अंदाज नाही):") : "Illustrative examples from this model (not forecasts):",
+    customer_at_a_glance: isIndic ? (language === "HI" ? "ग्राहक और निवेश एक नज़र में" : "ग्राहक आणि गुंतवणूक एका नजरेत") : "Customer and investment at a glance",
+    why_this_result: isIndic ? (language === "HI" ? "इस परिणाम का कारण" : "या निकालाचे कारण") : "Why this result",
+    historical_in_simple_terms: isIndic ? (language === "HI" ? "ऐतिहासिक संख्या का सरल अर्थ" : "ऐतिहासिक आकड्यांचा सोपा अर्थ") : "What the historical numbers mean",
     payoff_curve_title: isIndic ? (language === "HI" ? "संविदात्मक अदायगी वक्र (परिपक्वता रिटर्न रूपरेखा)" : "करारातील परतावा आलेख (मुदतपूर्ती परतावा रूपरेषा)") : "Contractual Payoff Curve (Maturity Return Profile)",
     cpn_name: isIndic ? (language === "HI" ? "कैपिटल प्रोटेक्टेड नोट (मूलधन सुरक्षित)" : "कॅपिटल प्रोटेक्टेड नोट (मुद्दल सुरक्षित)") : "Capital-Protected Note (CPN)",
     dcd_name: isIndic ? (language === "HI" ? "डुअल करेंसी डिपॉजिट (दोहरी मुद्रा जमा)" : "ड्युअल करन्सी डिपॉझिट (दुहेरी चलन ठेव)") : "Dual Currency Deposit (DCD)",
@@ -406,6 +437,40 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
           result: r,
         }));
 
+  const simpleExplanation =
+    type === "ELN"
+      ? `You invest ${money(investment, currency)} for ${productConfig.tenor_years || 1} year(s). The coupon is paid according to the contract. If ${safeState.product?.ticker || "the underlying"} stays above the ${productConfig.barrier_pct ?? 70}% barrier, the downside trigger is not activated. If it falls below that barrier, repayment can be reduced and may follow the underlying's decline.`
+      : type === "DCD"
+        ? `You place ${money(investment, currency)} for ${productConfig.tenor_years || 1} year(s) and receive the agreed coupon. If the exchange rate reaches the conversion strike, repayment may be made in the alternate currency. The final value depends on the exchange rate and the contract terms.`
+        : `You invest ${money(investment, currency)} for ${productConfig.tenor_years || 1} year(s). At maturity, the contract provides a ${productConfig.protection_pct ?? 100}% protection floor, subject to issuer credit risk, and gives you ${productConfig.participation_rate ?? 100}% participation in eligible underlying growth.`;
+
+  const simpleExamples = scenarioInsights
+    .slice(0, 3)
+    .map((scenario) => {
+      const result = scenario.result || {};
+      const shock = result.scenario_shock_pct;
+      const scenarioLabel = scenario.title || `If the underlying moves ${shock ?? "as shown"}%`;
+      return `${scenarioLabel}${shock != null ? ` (${shock >= 0 ? "+" : ""}${shock}% underlying move)` : ""}: modeled maturity value ${money(result.maturity_value ?? 0, currency)} (${(result.return_pct ?? 0) >= 0 ? "+" : ""}${pct(result.return_pct ?? 0)} return).`;
+    });
+
+  const formatReportMetric = (value, unit = "") => {
+    if (typeof value === "number") {
+      const formatted = new Intl.NumberFormat("en-IN", {
+        maximumFractionDigits: 2,
+        minimumFractionDigits: unit === "%" ? 2 : 0,
+      }).format(value);
+      return `${formatted}${unit}`;
+    }
+    return `${value ?? "—"}${unit}`;
+  };
+
+  const historicalFacts = safeInsights.historical_insights || [];
+  const historicalMetric = (key) =>
+    historicalFacts.find((fact) => fact.key === key)?.value;
+  const historicalSimpleExplanation = historicalFacts.length
+    ? `The model reviewed ${formatReportMetric(historicalMetric("total_windows"))} historical periods. ${formatReportMetric(historicalMetric("win_frequency_pct"), "%")} showed gains and ${formatReportMetric(historicalMetric("loss_frequency_pct"), "%")} showed losses. The average modeled return was ${formatReportMetric(historicalMetric("average_return"), "%")}; the worst observed result was ${formatReportMetric(historicalMetric("worst_return"), "%")}. These are observations from the selected data window, not predictions.`
+    : "No historical market evidence was available for this assessment.";
+
   // Suitability Checks
   const checks = safeState.evaluation?.assessment?.checks || [];
   const suitabilityInsights =
@@ -479,14 +544,62 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>{strings.section_overview}</Text>
-        <Text style={styles.text}>{executiveSummary}</Text>
-
+        <Text style={styles.sectionTitle}>{strings.customer_at_a_glance}</Text>
         <View style={styles.factGrid}>
           <View style={styles.factBox}>
             <Text style={styles.factLabel}>{strings.customer_name}</Text>
             <Text style={styles.factValue}>{clientName}</Text>
           </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Risk level</Text>
+            <Text style={styles.factValue}>{safeState.client?.risk_appetite || "Not provided"}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Investment goal</Text>
+            <Text style={styles.factValue}>{safeState.client?.investment_objective || "Not provided"}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Investment horizon</Text>
+            <Text style={styles.factValue}>{safeState.client?.investment_horizon_months ? `${safeState.client.investment_horizon_months} months` : "Not provided"}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Maximum acceptable loss</Text>
+            <Text style={styles.factValue}>{safeState.client?.max_acceptable_loss_pct != null ? `${safeState.client.max_acceptable_loss_pct}%` : "Not provided"}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Access to money</Text>
+            <Text style={styles.factValue}>{safeState.client?.liquidity_requirement_months ? `${safeState.client.liquidity_requirement_months} months` : "Not provided"}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>Portfolio currency</Text>
+            <Text style={styles.factValue}>{safeState.client?.portfolio_currency || currency}</Text>
+          </View>
+          <View style={styles.factBox}>
+            <Text style={styles.factLabel}>{strings.investment_amount}</Text>
+            <Text style={styles.factValue}>{money(investment, currency)}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>{strings.section_overview}</Text>
+        <Text style={styles.text}>{executiveSummary}</Text>
+        <View style={styles.simpleExplanation}>
+          <Text style={styles.simpleTitle}>{strings.simple_explanation}</Text>
+          <Text style={styles.statusText}>{simpleExplanation}</Text>
+          {simpleExamples.length > 0 && (
+            <View style={{ marginTop: 5 }}>
+              <Text style={[styles.statusText, { fontWeight: "bold", marginBottom: 2 }]}>
+                {strings.illustrative_examples}
+              </Text>
+              {simpleExamples.map((example, index) => (
+                <Text key={index} style={styles.bulletItem}>
+                  • {example}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.factGrid}>
           <View style={styles.factBox}>
             <Text style={styles.factLabel}>{strings.product_type}</Text>
             <Text style={styles.factValue}>{typeName}</Text>
@@ -494,10 +607,6 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
           <View style={styles.factBox}>
             <Text style={styles.factLabel}>{strings.underlying_asset}</Text>
             <Text style={styles.factValue}>{safeState.product?.ticker || "N/A"}</Text>
-          </View>
-          <View style={styles.factBox}>
-            <Text style={styles.factLabel}>{strings.investment_amount}</Text>
-            <Text style={styles.factValue}>{money(investment, currency)}</Text>
           </View>
           {investmentSummary.map((fact, i) => (
             <View key={i} style={styles.factBox}>
@@ -545,15 +654,23 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
               const rowStyle = idx % 2 === 1 ? styles.tableRowAlt : styles.tableRow;
               return (
                 <View key={idx} style={rowStyle}>
-                  <Text style={[styles.tableCol, { width: "30%", fontWeight: "bold" }]}>{sc.title}</Text>
-                  <Text style={[styles.tableCol, { width: "30%", textAlign: "right" }]}>
-                    {money(r.maturity_value ?? 0, currency)}
-                  </Text>
-                  <Text style={[styles.tableCol, { width: "20%", textAlign: "right", color: isGain ? "#16a34a" : "#dc2626" }]}>
-                    {isGain ? "+" : ""}{money(r.profit_loss ?? 0, currency)}
-                  </Text>
-                  <Text style={[styles.tableCol, { width: "20%", textAlign: "right", fontWeight: "bold", color: isGain ? "#16a34a" : "#dc2626" }]}>
-                    {isGain ? "+" : ""}{pct((r.return_pct || 0) / 100)}
+                  <View style={styles.tableDataRow}>
+                    <Text style={[styles.tableCol, { width: "30%", fontWeight: "bold" }]}>{sc.title}</Text>
+                    <Text style={[styles.tableCol, { width: "30%", textAlign: "right" }]}>
+                      {money(r.maturity_value ?? 0, currency)}
+                    </Text>
+                    <Text style={[styles.tableCol, { width: "20%", textAlign: "right", color: isGain ? "#16a34a" : "#dc2626" }]}>
+                      {isGain ? "+" : ""}{money(r.profit_loss ?? 0, currency)}
+                    </Text>
+                    <Text style={[styles.tableCol, { width: "20%", textAlign: "right", fontWeight: "bold", color: isGain ? "#16a34a" : "#dc2626" }]}>
+                      {isGain ? "+" : ""}{pct(r.return_pct || 0)}
+                    </Text>
+                  </View>
+                  <Text style={[styles.plainNote, { width: "100%", marginTop: 2 }]}>
+                    {sc.explanation || (isGain
+                      ? "This modeled result is above the original investment."
+                      : "This modeled result is below the original investment.")}
+                    {" "}The maturity value is the modeled amount at the end of the term, before fees or taxes.
                   </Text>
                 </View>
               );
@@ -612,6 +729,22 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
                 {s.title} · {s.missing ? strings.need_info : s.status}
               </Text>
               <Text style={styles.statusText}>{s.explanation}</Text>
+              {s.money_comparison?.length > 0 && (
+                <View style={{ marginTop: 3 }}>
+                  {s.money_comparison.map((fact, index) => (
+                    <Text key={index} style={styles.plainNote}>
+                      • {fact.label}: {money(fact.value, fact.unit || currency)}
+                    </Text>
+                  ))}
+                </View>
+              )}
+              <Text style={styles.plainNote}>
+                {s.missing
+                  ? "Next step: provide the missing information before relying on this check."
+                  : s.status === "PASS"
+                  ? "Next step: this check passed, but review the product terms and risks before deciding."
+                  : "Next step: review this mismatch with the RM and do not proceed until the concern is resolved or documented."}
+              </Text>
             </View>
           );
         })}
@@ -620,12 +753,16 @@ export default function ClientReportPDF({ state = {}, insights = {}, language = 
           <View wrap={false}>
             <Text style={styles.sectionTitle}>{strings.section_historical}</Text>
             <Text style={styles.text}>{historicalNote}</Text>
+            <View style={styles.simpleExplanation}>
+              <Text style={styles.simpleTitle}>{strings.historical_in_simple_terms}</Text>
+              <Text style={styles.plainNote}>{historicalSimpleExplanation}</Text>
+            </View>
             <View style={styles.factGrid}>
               {historicalInsights.map((f, i) => (
                 <View key={i} style={styles.factBox}>
                   <Text style={styles.factLabel}>{f.label}</Text>
                   <Text style={styles.factValue}>
-                    {f.value} {f.unit || ""}
+                    {formatReportMetric(f.value, f.unit || "")}
                   </Text>
                 </View>
               ))}

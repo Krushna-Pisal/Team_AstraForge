@@ -76,8 +76,16 @@
 .auth-brand-header {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
   z-index: 2;
+}
+
+.auth-brand-logo {
+  display: block;
+  width: min(270px, 100%);
+  height: 112px;
+  object-fit: contain;
+  object-position: left center;
+  mix-blend-mode: multiply;
 }
 
 .auth-brand-icon {
@@ -656,4 +664,84 @@
     border: none;
     background: transparent;
   }
+}
+
+/* AstraForge teal-cyan authentication presentation */
+.auth-wrapper {
+  background: #f6fafa;
+  color: #0b1f3a;
+}
+
+.auth-brand-panel {
+  background: linear-gradient(145deg, #0b3f45 0%, #0f766e 52%, #06b6d4 100%);
+}
+
+.auth-brand-logo {
+  width: min(290px, 100%);
+  height: 116px;
+  object-fit: contain;
+  object-position: left center;
+  mix-blend-mode: screen;
+}
+
+.auth-brand-sub {
+  color: #a7f3d0;
+}
+
+.auth-brand-highlight {
+  color: #67e8f9;
+}
+
+.auth-form-panel {
+  background: #f6fafa;
+}
+
+.auth-card {
+  border: 1px solid #dce7e7;
+  box-shadow: 0 1px 2px rgba(11, 31, 58, .04), 0 16px 36px rgba(15, 118, 110, .08);
+}
+
+.auth-card-title,
+.auth-label {
+  color: #102a43;
+}
+
+.auth-card-subtitle,
+.auth-footer-prompt {
+  color: #52677a;
+}
+
+.auth-input {
+  background: #fff;
+  border-color: #c6d8d8;
+  color: #0b1f3a;
+}
+
+.auth-input:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, .14);
+}
+
+.auth-btn-primary {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 48%, #06b6d4 100%);
+  box-shadow: 0 7px 18px rgba(15, 118, 110, .2);
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0b5f59 0%, #0f9f91 48%, #0891b2 100%);
+}
+
+.auth-link {
+  color: #0f766e;
+}
+
+.auth-role-tab {
+  background: #fff;
+  border-color: #dce7e7;
+}
+
+.auth-role-tab.active {
+  border-color: #14b8a6;
+  background: #ecfdf9;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, .12);
 }

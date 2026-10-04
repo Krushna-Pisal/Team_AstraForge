@@ -9,6 +9,7 @@ import {
   resendVerificationEmail,
   verifyEmailToken,
   getUserProfile,
+  updateUserProfile,
   getInitialSession,
 } from "./authService";
 
@@ -143,6 +144,28 @@ export function AuthProvider({ children }) {
     setRole(null);
   };
 
+  const updateProfile = async (updates) => {
+    if (!user?.id) {
+      throw new Error("You must be signed in to update your profile.");
+    }
+
+    const updatedProfile = await updateUserProfile(user.id, updates);
+    if (updatedProfile) {
+      setProfile(updatedProfile);
+      setUser((currentUser) =>
+        currentUser
+          ? {
+              ...currentUser,
+              user_metadata: {
+                ...currentUser.user_metadata,
+                full_name: updatedProfile.full_name,
+              },
+            }
+          : currentUser,
+      );
+    }
+  };
+
   const sendResetLink = async (email) => {
     return await sendPasswordResetEmail(email);
   };
@@ -170,6 +193,7 @@ export function AuthProvider({ children }) {
     signIn,
     signUp,
     signOut,
+    updateProfile,
     sendResetLink,
     resetPassword,
     resendVerification,

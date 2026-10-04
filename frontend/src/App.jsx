@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import "./features.css";
 import MainLayout from "./components/layout/MainLayout";
 import { AssessmentProvider } from "./state/AssessmentContext";
 import { AuthProvider } from "./auth/AuthContext";
+import { useAuth } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleGuard from "./auth/RoleGuard";
 import { lazy, Suspense } from "react";
@@ -35,6 +36,31 @@ import SuitabilityResults from "./pages/SuitabilityResults";
 import ProductDiscovery from "./pages/ProductDiscovery";
 import AssessmentHistory from "./pages/AssessmentHistory";
 import Reports from "./pages/Reports";
+import RMProfile from "./pages/RMProfile";
+import LandingPage from "./pages/LandingPage";
+
+function RootEntry() {
+  const { user, role, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <Loading text="Preparing AstraForge…" />;
+  }
+
+  if (!user) {
+    return location.pathname === "/" ? (
+      <LandingPage />
+    ) : (
+      <Navigate to="/login" state={{ from: location }} replace />
+    );
+  }
+
+  if (role !== "rm") {
+    return <Navigate to="/client" replace />;
+  }
+
+  return <MainLayout />;
+}
 
 export default function App() {
   return (
@@ -64,13 +90,7 @@ export default function App() {
             {/* Protected RM Workspace Routes */}
             <Route
               path="/"
-              element={
-                <ProtectedRoute>
-                  <RoleGuard allowedRoles={["rm"]}>
-                    <MainLayout />
-                  </RoleGuard>
-                </ProtectedRoute>
-              }
+              element={<RootEntry />}
             >
               <Route index element={<Dashboard />} />
 
@@ -104,6 +124,7 @@ export default function App() {
               </Route>
 
               <Route path="clients" element={<ClientProfile />} />
+              <Route path="profile" element={<RMProfile />} />
               <Route path="history" element={<AssessmentHistory />} />
               <Route path="reports" element={<Reports />} />
 

@@ -364,6 +364,28 @@ export async function getUserProfile(userId) {
   return null;
 }
 
+export async function updateUserProfile(userId, updates) {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: updates.full_name.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(formatAuthError(error));
+    }
+
+    return data;
+  }
+
+  return null;
+}
+
 /**
  * Get the initial session on startup
  */

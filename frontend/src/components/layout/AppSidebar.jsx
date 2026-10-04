@@ -5,7 +5,6 @@ import {
   History,
   FileText,
   Layers,
-  ArrowUpRight,
 } from "lucide-react";
 const items = [
   ["/", "Overview", LayoutDashboard],
@@ -22,12 +21,7 @@ export default function AppSidebar() {
         Skip to content
       </a>
       <NavLink className="brand" to="/">
-        <span className="brand-mark">
-          <ArrowUpRight size={23} />
-        </span>
-        <span>
-          AstraForge<small>STRUCTURED INTELLIGENCE</small>
-        </span>
+        <img className="brand-logo" src="/astraforge-logo.png" alt="AstraForge" />
       </NavLink>
       <div className="nav-caption">WORKSPACE</div>
       <nav>
