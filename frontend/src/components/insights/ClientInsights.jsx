@@ -97,7 +97,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${clientName}_InveSimul_Report.pdf`;
+      a.download = `${clientName.replace(/\s+/g, "_")}_AstraForge_Report.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
