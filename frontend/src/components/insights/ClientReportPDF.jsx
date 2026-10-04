@@ -2,11 +2,24 @@ import React from "react";
 import { Document, Page, Text, View, StyleSheet, Font, Svg, Polyline, Line, Rect } from "@react-pdf/renderer";
 import { money, pct } from "../../lib/api";
 
-// Use a font that supports Devanagari characters
+const FONT_BASE = typeof window !== "undefined" && window.location ? window.location.origin : "";
+
 Font.register({
   family: "Noto Sans Devanagari",
-  src: "https://fonts.gstatic.com/s/notosansdevanagari/v22/6xKwdspZNa_1Yj-yYtW5yFw01G9B35U00rF0B7I2.ttf",
+  fonts: [
+    {
+      src: `${FONT_BASE}/fonts/NotoSansDevanagari-Regular.ttf`,
+      fontWeight: "normal",
+    },
+    {
+      src: `${FONT_BASE}/fonts/NotoSansDevanagari-Bold.ttf`,
+      fontWeight: "bold",
+    },
+  ],
 });
+
+// Prevent Devanagari conjunct splitting / hyphenation errors
+Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({
   page: {
