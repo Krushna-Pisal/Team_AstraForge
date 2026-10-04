@@ -2,10 +2,23 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./features.css";
 import MainLayout from "./components/layout/MainLayout";
 import { AssessmentProvider } from "./state/AssessmentContext";
+import { AuthProvider } from "./auth/AuthContext";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import RoleGuard from "./auth/RoleGuard";
 import { lazy, Suspense } from "react";
 import { Loading } from "./components/ui/Workflow";
 
-// Placeholder Pages
+// Authentication Pages
+import LoginPage from "./auth/pages/LoginPage";
+import SignupPage from "./auth/pages/SignupPage";
+import VerifyEmailPage from "./auth/pages/VerifyEmailPage";
+import ForgotPasswordPage from "./auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "./auth/pages/ResetPasswordPage";
+
+// Client Portal
+import ClientDashboard from "./pages/ClientDashboard";
+
+// RM Workspace Pages
 import Dashboard from "./pages/Dashboard";
 import ProductSimulator from "./pages/ProductSimulator";
 import ConfigureELN from "./pages/ConfigureELN";
@@ -25,49 +38,83 @@ import Reports from "./pages/Reports";
 
 export default function App() {
   return (
-    <AssessmentProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Dashboard />} />
+    <AuthProvider>
+      <AssessmentProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Authentication Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            <Route path="simulator">
-              <Route index element={<ProductSimulator />} />
-              <Route path="eln" element={<ConfigureELN />} />
-              <Route path="dcd" element={<DcdConfigure />} />
-              <Route path="cpn" element={<CpnConfigure />} />
-              <Route path="investment" element={<Investment />} />
-              <Route path="budget" element={<InvestmentPlan />} />
-              <Route path="insights" element={<Insights />} />
-              <Route
-                path="client"
-                element={<ClientProfile flow="simulator" />}
-              />
-              <Route
-                path="results"
-                element={
-                  <Suspense
-                    fallback={<Loading text="Opening analysis workspace…" />}
-                  >
-                    <SimulationResults />
-                  </Suspense>
-                }
-              />
-              <Route path="suitability" element={<SuitabilityResults />} />
+            {/* Protected Client Portal Routes */}
+            <Route
+              path="/client"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <ClientDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected RM Workspace Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["rm"]}>
+                    <MainLayout />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+
+              <Route path="simulator">
+                <Route index element={<ProductSimulator />} />
+                <Route path="eln" element={<ConfigureELN />} />
+                <Route path="dcd" element={<DcdConfigure />} />
+                <Route path="cpn" element={<CpnConfigure />} />
+                <Route path="investment" element={<Investment />} />
+                <Route path="budget" element={<InvestmentPlan />} />
+                <Route path="insights" element={<Insights />} />
+                <Route
+                  path="client"
+                  element={<ClientProfile flow="simulator" />}
+                />
+                <Route
+                  path="results"
+                  element={
+                    <Suspense
+                      fallback={<Loading text="Opening analysis workspace…" />}
+                    >
+                      <SimulationResults />
+                    </Suspense>
+                  }
+                />
+                <Route path="suitability" element={<SuitabilityResults />} />
+              </Route>
+
+              <Route path="discovery">
+                <Route index element={<ProductDiscovery />} />
+              </Route>
+
+              <Route path="clients" element={<ClientProfile />} />
+              <Route path="history" element={<AssessmentHistory />} />
+              <Route path="reports" element={<Reports />} />
+
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
 
-            <Route path="discovery">
-              <Route index element={<ProductDiscovery />} />
-            </Route>
-
-            <Route path="clients" element={<ClientProfile />} />
-            <Route path="history" element={<AssessmentHistory />} />
-            <Route path="reports" element={<Reports />} />
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AssessmentProvider>
+            {/* Global Fallback */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AssessmentProvider>
+    </AuthProvider>
   );
 }

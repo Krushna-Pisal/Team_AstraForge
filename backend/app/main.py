@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.domain import ErrorResponse
 from app.errors import install_error_handlers
+import os
 from app.phase3_market_data import get_market_data, MarketHistory, MarketInstrument, MARKETS
 from app.services import SimulationRequest, SimulationBundle, EvaluateRequest, EvaluationBundle, run_simulation, evaluate_client
 from app.phase3_market_data import SearchResponse, search_underlyings
@@ -34,12 +35,23 @@ app = FastAPI(
 install_error_handlers(app)
 from app.discovery.discovery_service import router as discovery_router
 from app.agents.insights_agent import router as insights_router
+from app.auth_routes import router as auth_router
+
 app.include_router(discovery_router)
 app.include_router(insights_router)
+app.include_router(auth_router)
+
+frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+if frontend_url and frontend_url not in origins:
+    origins.append(frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,10 +60,19 @@ app.add_middleware(
 CURVE_RATIO_RANGE = list(np.round(np.arange(0.20, 1.81, 0.01), 4).tolist())
 
 
+from app.auth import get_current_user, User
+from fastapi import Depends
+
 @app.get("/health", tags=["meta"])
 def health_check():
     """Liveness check."""
     return {"status": "ok"}
+
+@app.get("/me", tags=["auth"])
+def get_current_user_profile(user: User = Depends(get_current_user)):
+    """Return the currently authenticated user's profile from the JWT token."""
+    return {"id": user.id, "email": user.email, "role": user.role}
+
 
 
 @app.get("/underlyings", tags=["legacy"], deprecated=True)
