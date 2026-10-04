@@ -213,12 +213,10 @@ export default function ClientInsights({ insights, language = "EN" }) {
   const [scenarioIdx, setScenarioIdx] = useState(Math.floor(scenarios.length / 2));
   const activeScenario = scenarios[scenarioIdx];
 
-  const typeName = type === "CPN" ? t.cpn_name : type === "DCD" ? t.dcd_name : type === "ELN" ? t.eln_name : type;
-
   return (
-    <div className="page-stack">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, marginRight: '4px' }}>
+    <div className="page-stack client-insights">
+      <div className="client-report-actions">
+        <span>
           Download PDF Report:
         </span>
         <button 
@@ -271,7 +269,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
         <h2>{t.explore_scenarios}</h2>
         
         {state.simulation?.curve && (
-          <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+          <div className="client-insight-chart">
             <PayoffChart 
               curve={state.simulation.curve.results.map(r => ({
                 underlying_return_pct: r.scenario_shock_pct,
@@ -288,8 +286,8 @@ export default function ClientInsights({ insights, language = "EN" }) {
         
         {scenarios.length > 0 && activeScenario && (
           <div className="page-stack">
-            <div style={{ padding: '0 10px', marginTop: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '10px' }}>
+            <div className="client-scenario-control">
+              <div className="client-scenario-scale">
                 <span>{t.market_drops}</span>
                 <span>{t.market_flat}</span>
                 <span>{t.market_rises}</span>
@@ -308,7 +306,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
               <h3 style={{ margin: '0 0 10px 0' }}>{activeScenario.title}</h3>
               <p style={{ marginBottom: '15px' }}>{activeScenario.explanation}</p>
               
-              <dl className="insight-facts" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+              <dl className="insight-facts client-scenario-facts">
                 <div>
                   <dt>{t.initial_investment}</dt>
                   <dd>{money(investment, currency)}</dd>
@@ -319,14 +317,14 @@ export default function ClientInsights({ insights, language = "EN" }) {
                 </div>
                 <div>
                   <dt>{t.potential_gain_loss}</dt>
-                  <dd style={{ color: activeScenario.result.profit_loss >= 0 ? '#4ade80' : '#f87171' }}>
+                  <dd className={activeScenario.result.profit_loss >= 0 ? "positive" : "negative"}>
                     {activeScenario.result.profit_loss > 0 ? "+" : ""}{money(activeScenario.result.profit_loss, currency)}
                   </dd>
                 </div>
                 <div>
                   <dt>{t.investor_return}</dt>
-                  <dd style={{ color: activeScenario.result.return_pct >= 0 ? '#4ade80' : '#f87171' }}>
-                    {activeScenario.result.return_pct > 0 ? "+" : ""}{pct(activeScenario.result.return_pct / 100)}
+                  <dd className={activeScenario.result.return_pct >= 0 ? "positive" : "negative"}>
+                    {activeScenario.result.return_pct > 0 ? "+" : ""}{pct(activeScenario.result.return_pct)}
                   </dd>
                 </div>
               </dl>
@@ -360,29 +358,29 @@ export default function ClientInsights({ insights, language = "EN" }) {
             const isPass = s.status === "PASS";
             const isWarn = s.status === "WARNING";
             const isMissing = s.missing;
+            const statusClass = isMissing ? "missing" : isPass ? "pass" : isWarn ? "warning" : "mismatch";
             
             const Icon = isMissing ? Info : isPass ? CheckCircle : AlertTriangle;
-            const iconColor = isMissing ? "#9ca3af" : isPass ? "#4ade80" : isWarn ? "#fbbf24" : "#f87171";
             
             return (
-              <div key={i} className="notice" style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                <Icon style={{ color: iconColor, flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div key={i} className={`notice client-suitability-result ${statusClass}`}>
+                <Icon className="client-suitability-icon" />
+                <div className="client-suitability-content">
+                  <div className="client-suitability-heading">
                     <h3 style={{ margin: 0, fontSize: '16px' }}>{s.title}</h3>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', background: 'rgba(255,255,255,0.1)', color: iconColor }}>
+                    <span className="client-suitability-status">
                       {isMissing ? t.need_info : s.status}
                     </span>
                   </div>
                   <p style={{ margin: '0 0 10px 0' }}>{s.explanation}</p>
                   
                   {s.money_comparison && s.money_comparison.length > 0 && (
-                    <dl style={{ display: 'flex', gap: '20px', margin: 0, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+                    <dl className="client-money-comparison">
                       {s.money_comparison.map((f, j) => (
                         <div key={j}>
                           <dt style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '2px' }}>{f.label}</dt>
                           <dd style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-                            {f.unit === currency ? money(f.value, f.unit) : f.unit === "%" ? pct(f.value / 100) : `${f.value} ${f.unit}`}
+                            {f.unit === currency ? money(f.value, f.unit) : f.unit === "%" ? pct(f.value) : `${f.value} ${f.unit}`}
                           </dd>
                         </div>
                       ))}
@@ -427,7 +425,7 @@ export default function ClientInsights({ insights, language = "EN" }) {
           ))}
         </ul>
         
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px', marginTop: '10px' }}>
+        <div className="client-important-notes">
           {insights.important_notes.map((note, i) => (
             <p key={i} className="muted" style={{ textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' }}>{note}</p>
           ))}
