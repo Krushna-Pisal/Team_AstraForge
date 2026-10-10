@@ -175,6 +175,13 @@ export default function LoginForm() {
           Create Account
         </Link>
       </div>
+
+      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center", fontSize: "0.85rem", color: "#94a3b8" }}>
+        Are you an individual investor?{" "}
+        <Link to="/login/client" className="auth-link" style={{ fontWeight: "600", color: "#38bdf8" }}>
+          Client Portal Sign In →
+        </Link>
+      </div>
     </div>
   );
 }

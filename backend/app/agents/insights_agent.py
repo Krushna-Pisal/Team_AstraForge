@@ -4,7 +4,8 @@ import json
 from collections import OrderedDict
 from datetime import datetime, timezone
 from threading import RLock
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.auth import get_current_user, User
 from app.config import gemini_settings
 from .insight_models import InsightRequest, InsightResponse, GeminiExplanation
 from .insight_prompts import SYSTEM_PROMPT, INSIGHTS_PROMPT_VERSION
@@ -38,8 +39,8 @@ def validate_choices(raw, audience, catalog):
     return choices
 
 @router.post("/generate",response_model=InsightResponse)
-def generate_insights(req: InsightRequest):
-    data=trusted_inputs(req.assessment_id)
+def generate_insights(req: InsightRequest, user: User = Depends(get_current_user)):
+    data=trusted_inputs(req.assessment_id, caller=user)
     fallback=build_fallback(data,req.audience,req.language)
     catalog=explanation_catalog(fallback,req.language)
     key,model=gemini_settings()

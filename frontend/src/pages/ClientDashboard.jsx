@@ -1,26 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { useAssessment } from "../state/AssessmentContext";
-import { PageTitle, Metric, Badge } from "../components/ui/Workflow";
+import { api, money } from "../lib/api";
+import { PageTitle, Metric, Badge, Loading } from "../components/ui/Workflow";
 import {
   User,
   ShieldCheck,
-  TrendingUp,
-  PieChart,
   LogOut,
-  ChevronRight,
-  ExternalLink,
-  Layers,
   Sparkles,
-  DollarSign,
-  AlertCircle,
+  PlusCircle,
+  Clock,
 } from "lucide-react";
 
 export default function ClientDashboard() {
   const { user, profile, signOut } = useAuth();
-  const { state, dispatch } = useAssessment();
   const navigate = useNavigate();
+
+  const [assessments, setAssessments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [_error, setError] = useState(null);
 
   const clientName =
     profile?.full_name ||
@@ -28,50 +26,65 @@ export default function ClientDashboard() {
     user?.email?.split("@")[0] ||
     "Valued Client";
 
+  useEffect(() => {
+    async function loadClientData() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api("/api/customer/assessments");
+        setAssessments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn("Could not load client assessments:", err);
+        setError("Unable to load simulation history.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadClientData();
+  }, []);
+
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
   };
 
-  // Sample client portfolio & recommended structured products
-  const recommendedProducts = [
+  // Structured products catalog available for customer exploration
+  const productCatalog = [
     {
-      id: "rec-1",
-      name: "Tech Titans 90% Capital Protected Note",
+      id: "prod-cpn",
+      name: "Capital Protected Note (CPN)",
       type: "CPN",
-      tenor: "12 Months",
-      underlying: "NVDA, AAPL, MSFT",
-      protection: "90% Capital Protected",
-      coupon: "8.5% p.a.",
-      riskLevel: "Moderate",
-      suitability: "Highly Suitable",
+      tenor: "12 - 36 Months",
+      underlying: "NIFTY 50 / Major Indices",
+      keyFeature: "100% Principal Protection",
+      suitabilityTarget: "Conservative to Moderate",
+      badgeColor: "#059669",
     },
     {
-      id: "rec-2",
-      name: "Global Energy & Banking Yield Enhancer",
+      id: "prod-eln",
+      name: "Equity Linked Note (ELN)",
       type: "ELN",
-      tenor: "6 Months",
-      underlying: "XOM, JPM",
-      strike: "85% Strike",
-      coupon: "12.2% p.a.",
-      riskLevel: "Balanced",
-      suitability: "Suitable",
+      tenor: "6 - 12 Months",
+      underlying: "Blue-chip Equities",
+      keyFeature: "Enhanced Coupon Yield",
+      suitabilityTarget: "Moderate to Aggressive",
+      badgeColor: "#2563eb",
     },
     {
-      id: "rec-3",
-      name: "Dual Currency USD/EUR Yield Booster",
+      id: "prod-dcd",
+      name: "Dual Currency Deposit (DCD)",
       type: "DCD",
-      tenor: "1 Month",
-      underlying: "USD/EUR",
-      strike: "1.0850",
-      coupon: "7.8% p.a.",
-      riskLevel: "Conservative",
-      suitability: "Highly Suitable",
+      tenor: "1 - 3 Months",
+      underlying: "USD/INR, EUR/USD",
+      keyFeature: "Short-Term Premium Yield",
+      suitabilityTarget: "Multi-Currency Portfolios",
+      badgeColor: "#d97706",
     },
   ];
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem" }} className="page-stack">
       {/* Client Portal Header */}
       <header
         style={{
@@ -79,24 +92,24 @@ export default function ClientDashboard() {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "1rem 1.5rem",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#17263a",
           borderRadius: "14px",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-          marginBottom: "1.5rem",
+          border: "1px solid #2a3e56",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div
             style={{
-              width: "40px",
-              height: "40px",
+              width: "42px",
+              height: "42px",
               borderRadius: "10px",
-              backgroundColor: "#0f172a",
+              backgroundColor: "#0b111c",
+              border: "1px solid #38bdf8",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#c59b27",
+              color: "#38bdf8",
               fontWeight: "700",
               fontSize: "1.1rem",
             }}
@@ -104,26 +117,26 @@ export default function ClientDashboard() {
             AF
           </div>
           <div>
-            <div style={{ fontWeight: "700", color: "#0f172a", fontSize: "1.05rem" }}>
+            <div style={{ fontWeight: "700", color: "#f8fafc", fontSize: "1.05rem" }}>
               AstraForge Private Client Portal
             </div>
-            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-              Secure Wealth Workspace · ID: {user?.id?.slice(0, 8) || "CL-9042"}
+            <div style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+              Secure Client Workspace · ID: {user?.id?.slice(0, 8) || "CL-USER"}
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontWeight: "600", fontSize: "0.9rem", color: "#0f172a" }}>
+            <div style={{ fontWeight: "600", fontSize: "0.9rem", color: "#f8fafc" }}>
               {clientName}
             </div>
             <span
               style={{
                 display: "inline-block",
                 fontSize: "0.72rem",
-                color: "#1e40af",
-                backgroundColor: "#eff6ff",
+                color: "#38bdf8",
+                backgroundColor: "rgba(56, 189, 248, 0.15)",
                 padding: "2px 8px",
                 borderRadius: "999px",
                 fontWeight: "600",
@@ -153,54 +166,66 @@ export default function ClientDashboard() {
 
       {/* Main Content Page Stack */}
       <div className="page-stack">
-        <PageTitle
-          title={`Welcome, ${clientName}`}
-          description="Review your structured product portfolio, personalized product recommendations, and suitability analysis."
-        />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
+          <PageTitle
+            title={`Welcome, ${clientName}`}
+            description="Explore structured investment products, simulate scenarios, and review your regulatory suitability records."
+          />
+          <Link
+            to="/client/simulate"
+            className="btn-primary"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "0.65rem 1.25rem",
+              fontWeight: "600",
+            }}
+          >
+            <PlusCircle size={18} />
+            <span>New Product Simulation</span>
+          </Link>
+        </div>
 
-        {/* Wealth Summary Metrics */}
+        {/* Real Summary Metrics */}
         <div className="stats-grid">
           <Metric
-            label="Total Portfolio Value"
-            value="$1,450,000"
-            hint="+4.8% YTD Performance"
+            label="Saved Simulations"
+            value={loading ? "…" : `${assessments.length} Records`}
+            hint={assessments.length > 0 ? "Saved in secure ledger" : "No simulations yet"}
           />
           <Metric
-            label="Suitability Status"
-            value="Balanced Growth"
-            hint="Risk Profile Category: Tier 3"
+            label="Supported Note Types"
+            value="CPN · ELN · DCD"
+            hint="Fully modeled payout engines"
           />
           <Metric
-            label="Active Structured Notes"
-            value="4 Holdings"
-            hint="Next maturity: Nov 15, 2026"
+            label="Compliance Dimensions"
+            value="6 Regulatory Checks"
+            hint="Suitability rule set 1.0.0"
+            tone="positive"
           />
         </div>
 
-        {/* Recommended Products For Client */}
+        {/* Available Products Catalog */}
         <section className="card section-card page-stack">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <h2 style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
-                <Sparkles size={20} color="#c59b27" />
-                Tailored Product Recommendations
-              </h2>
-              <p className="muted" style={{ margin: "4px 0 0 0" }}>
-                Curated by your Relationship Manager based on your risk tolerance and yield objectives.
-              </p>
-            </div>
-            <Link to="/discovery" className="btn-secondary" style={{ fontSize: "0.86rem" }}>
-              Explore All Products
-            </Link>
+          <div>
+            <h2 style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+              <Sparkles size={20} color="#38bdf8" />
+              Available Structured Products
+            </h2>
+            <p className="muted" style={{ margin: "4px 0 0 0" }}>
+              Select a note structure to test custom investment sizes, payoffs, and suitability compliance.
+            </p>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem", marginTop: "0.5rem" }}>
-            {recommendedProducts.map((p) => (
+            {productCatalog.map((p) => (
               <div
                 key={p.id}
                 style={{
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #e2e8f0",
+                  backgroundColor: "#17263a",
+                  border: "1px solid #2a3e56",
                   borderRadius: "12px",
                   padding: "1.25rem",
                   display: "flex",
@@ -216,8 +241,9 @@ export default function ClientDashboard() {
                         fontWeight: "700",
                         padding: "3px 8px",
                         borderRadius: "6px",
-                        backgroundColor: "#0f172a",
-                        color: "#ffffff",
+                        backgroundColor: "#0b111c",
+                        color: "#38bdf8",
+                        border: "1px solid #2a3e56",
                       }}
                     >
                       {p.type}
@@ -226,35 +252,34 @@ export default function ClientDashboard() {
                       style={{
                         fontSize: "0.75rem",
                         fontWeight: "600",
-                        color: "#059669",
-                        backgroundColor: "#ecfdf5",
+                        color: "#94a3b8",
+                        backgroundColor: "#1e293b",
                         padding: "2px 8px",
                         borderRadius: "999px",
                       }}
                     >
-                      {p.suitability}
+                      {p.suitabilityTarget}
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: "1rem", fontWeight: "700", color: "#0f172a", margin: "0 0 0.5rem 0" }}>
+                  <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 0.5rem 0" }}>
                     {p.name}
                   </h3>
 
-                  <div style={{ fontSize: "0.85rem", color: "#475569", display: "flex", flexDirection: "column", gap: "4px", marginBottom: "1rem" }}>
-                    <div><strong>Underlying:</strong> {p.underlying}</div>
-                    <div><strong>Tenor:</strong> {p.tenor}</div>
-                    <div><strong>Key Feature:</strong> {p.protection || p.strike}</div>
-                    <div style={{ color: "#047857", fontWeight: "600" }}><strong>Indicative Coupon:</strong> {p.coupon}</div>
+                  <div style={{ fontSize: "0.85rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "6px", marginBottom: "1rem" }}>
+                    <div><span className="muted">Underlying:</span> {p.underlying}</div>
+                    <div><span className="muted">Typical Tenor:</span> {p.tenor}</div>
+                    <div><span className="muted">Key Feature:</span> <strong>{p.keyFeature}</strong></div>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", gap: "8px" }}>
                   <Link
-                    to="/simulator"
+                    to={`/client/simulate?product=${p.type}`}
                     className="btn-primary"
-                    style={{ flex: 1, textAlign: "center", fontSize: "0.85rem", padding: "0.45rem" }}
+                    style={{ flex: 1, textAlign: "center", fontSize: "0.85rem", padding: "0.55rem" }}
                   >
-                    Simulate Payoff
+                    Simulate {p.type} Payoff
                   </Link>
                 </div>
               </div>
@@ -262,32 +287,119 @@ export default function ClientDashboard() {
           </div>
         </section>
 
+        {/* Saved Simulations & Assessments */}
+        <section className="card section-card page-stack">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <h2 style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
+                <Clock size={20} color="#38bdf8" />
+                Your Saved Simulations & Reports
+              </h2>
+              <p className="muted" style={{ margin: "4px 0 0 0" }}>
+                Historical evaluations and suitability checks associated with your client account.
+              </p>
+            </div>
+            {assessments.length > 0 && (
+              <span className="badge" style={{ backgroundColor: "#1e293b", color: "#94a3b8" }}>
+                {assessments.length} Saved
+              </span>
+            )}
+          </div>
+
+          {loading ? (
+            <Loading text="Loading simulation history…" />
+          ) : assessments.length === 0 ? (
+            <div className="card empty-state" style={{ padding: "2.5rem 1.5rem" }}>
+              <div className="empty-mark" style={{ fontSize: "2rem" }}>📋</div>
+              <h2>No Saved Simulations Yet</h2>
+              <p className="muted" style={{ maxWidth: "420px", margin: "0.5rem auto 1.25rem" }}>
+                You haven't run any product simulations yet. Start a simulation to analyze potential payoffs, verify suitability, and generate advisory reports.
+              </p>
+              <Link to="/client/simulate" className="btn-primary">
+                Run Your First Simulation
+              </Link>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #40516b", textAlign: "left" }}>
+                    <th style={{ padding: "10px 8px" }}>Date</th>
+                    <th style={{ padding: "10px 8px" }}>Product</th>
+                    <th style={{ padding: "10px 8px" }}>Underlying</th>
+                    <th style={{ padding: "10px 8px" }}>Amount</th>
+                    <th style={{ padding: "10px 8px" }}>Suitability</th>
+                    <th style={{ padding: "10px 8px", textAlign: "right" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assessments.map((a) => {
+                    const req = a.request || {};
+                    const evalBundle = a.evaluation || {};
+                    const assessment = evalBundle.assessment || {};
+                    const client = req.client || {};
+
+                    return (
+                      <tr key={a.id} style={{ borderBottom: "1px solid #1e293b" }}>
+                        <td style={{ padding: "10px 8px", color: "#94a3b8" }}>
+                          {new Date(a.created_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: "10px 8px", fontWeight: "600" }}>
+                          {req.product_type || "Note"}
+                        </td>
+                        <td style={{ padding: "10px 8px", color: "#94a3b8" }}>
+                          {req.ticker || "^NSEI"}
+                        </td>
+                        <td style={{ padding: "10px 8px", fontWeight: "600", color: "#f8fafc" }}>
+                          {money(client.proposed_investment_amount || 0, client.portfolio_currency || "INR")}
+                        </td>
+                        <td style={{ padding: "10px 8px" }}>
+                          <Badge value={assessment.overall_status} />
+                        </td>
+                        <td style={{ padding: "10px 8px", textAlign: "right" }}>
+                          <Link
+                            to={`/client/assessment/${a.id}`}
+                            className="btn-secondary"
+                            style={{ padding: "4px 10px", fontSize: "0.8rem", textDecoration: "none" }}
+                          >
+                            View & Report →
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         {/* Suitability & Advisory Communication Card */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
           <section className="card section-card page-stack">
             <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <ShieldCheck size={20} color="#2563eb" />
-              Suitability & Investor Profile
+              Regulatory Protection & Suitability
             </h2>
             <p className="muted">
-              Your investment objectives, time horizon, and risk tolerance profile are compliant with regulatory standards.
+              AstraForge enforces suitability across 6 dimensions: Risk Appetite, Loss Capacity, Time Horizon, Liquidity, Objective Alignment, and Knowledge.
             </p>
-            <div style={{ backgroundColor: "#f8fafc", padding: "1rem", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+            <div style={{ backgroundColor: "#17263a", padding: "1rem", borderRadius: "10px", border: "1px solid #2a3e56" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                <span style={{ fontSize: "0.88rem", color: "#64748b" }}>Risk Tolerance:</span>
-                <span style={{ fontWeight: "600", color: "#0f172a" }}>Balanced Growth (Moderate)</span>
+                <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>Rules Standard:</span>
+                <span style={{ fontWeight: "600", color: "#f8fafc" }}>Rule Set 1.0.0 (SEBI / MiFID II)</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                <span style={{ fontSize: "0.88rem", color: "#64748b" }}>Max Loss Capacity:</span>
-                <span style={{ fontWeight: "600", color: "#0f172a" }}>15% of Portfolio</span>
+                <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>Payoff Engine:</span>
+                <span style={{ fontWeight: "600", color: "#38bdf8" }}>Deterministic Pricing Engine</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "0.88rem", color: "#64748b" }}>Target Annual Yield:</span>
-                <span style={{ fontWeight: "600", color: "#047857" }}>7.0% - 11.5%</span>
+                <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>Explanation Mode:</span>
+                <span style={{ fontWeight: "600", color: "#4ade80" }}>Grounded Plain Language (EN/HI/MR)</span>
               </div>
             </div>
-            <Link to="/simulator/suitability" className="btn-secondary" style={{ textAlign: "center", fontSize: "0.88rem" }}>
-              View Suitability Breakdown
+            <Link to="/client/simulate" className="btn-secondary" style={{ textAlign: "center", fontSize: "0.88rem" }}>
+              Test A New Portfolio Allocation
             </Link>
           </section>
 
@@ -297,21 +409,21 @@ export default function ClientDashboard() {
               Your Dedicated Relationship Manager
             </h2>
             <p className="muted">
-              Have questions about your structured notes, payoffs, or custom structures? Reach out directly.
+              Have questions about your structured notes, custom scenarios, or terms? Contact your dedicated RM.
             </p>
-            <div style={{ backgroundColor: "#f8fafc", padding: "1rem", borderRadius: "10px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#0f172a" }}>
+            <div style={{ backgroundColor: "#17263a", padding: "1rem", borderRadius: "10px", border: "1px solid #2a3e56", display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "#0b111c", border: "1px solid #38bdf8", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", color: "#38bdf8" }}>
                 RM
               </div>
               <div>
-                <div style={{ fontWeight: "700", color: "#0f172a" }}>Alexander Vance, CFA</div>
-                <div style={{ fontSize: "0.8rem", color: "#64748b" }}>Senior Private Wealth Advisor</div>
-                <div style={{ fontSize: "0.8rem", color: "#2563eb" }}>rm@astraforge.com</div>
+                <div style={{ fontWeight: "700", color: "#f8fafc" }}>Alexander Vance, CFA</div>
+                <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Senior Private Wealth Advisor</div>
+                <div style={{ fontSize: "0.8rem", color: "#38bdf8" }}>rm@astraforge.com</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
-              <Link to="/reports" className="btn-secondary" style={{ flex: 1, textAlign: "center", fontSize: "0.88rem" }}>
-                Download Wealth Statement
+              <Link to="/client/simulate" className="btn-secondary" style={{ flex: 1, textAlign: "center", fontSize: "0.88rem" }}>
+                Simulate Structured Note
               </Link>
             </div>
           </section>

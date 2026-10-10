@@ -4,7 +4,8 @@ Mounted under /api/dcd.
 """
 
 from typing import List
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.auth import get_current_user
 from app.dcd.schemas import (
     DcdProductInput,
     DcdPayoffRequest,
@@ -24,7 +25,7 @@ from app.dcd.backtest import run_dcd_backtest
 from app.dcd.loss_measures import calculate_dcd_loss_measures
 
 
-router = APIRouter(prefix="/api/dcd", tags=["dcd"])
+router = APIRouter(prefix="/api/dcd", tags=["dcd"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("/pairs", response_model=List[FxPairInfo])

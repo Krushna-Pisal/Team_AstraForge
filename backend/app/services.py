@@ -96,7 +96,7 @@ def run_simulation(req: SimulationRequest) -> SimulationBundle:
         product_risk=derive_product_risk(config, req.ticker, history, scenarios))
 
 
-def evaluate_client(req: EvaluateRequest) -> EvaluationBundle:
+def evaluate_client(req: EvaluateRequest, user=None) -> EvaluationBundle:
     validate_product_market(req)
     config = configuration(req)
     amount = req.config.deposit_amount if req.product_type == "DCD" else req.config.investment
@@ -111,7 +111,18 @@ def evaluate_client(req: EvaluateRequest) -> EvaluationBundle:
     assessment = run_suitability_assessment(SuitabilityRequest(client=req.client, product_risk=risk))
     result = EvaluationBundle(assessment=assessment, product_risk=risk, historical_error=error)
     from app.assessment_records import save_record
-    save_record(req, result, history)
+    owner_id = None
+    rm_id = None
+    if user is not None:
+        if getattr(user, "role", None) == "rm":
+            owner_id = req.client.client_id
+            rm_id = getattr(user, "id", None)
+        else:
+            owner_id = getattr(user, "id", None)
+            rm_id = None
+    else:
+        owner_id = req.client.client_id
+    save_record(req, result, history, owner_id=owner_id, rm_id=rm_id)
     return result
 
 

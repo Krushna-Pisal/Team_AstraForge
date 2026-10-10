@@ -1,6 +1,7 @@
 """Deterministic matching only. No AI ranking or recommended products."""
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.auth import require_rm_role, User
 from app.domain import DomainError, ErrorBody
 from app.products import prepare_product, PrepareProductRequest
 from app.services import run_simulation, configuration, derive_product_risk
@@ -45,7 +46,7 @@ def evaluate_saved(saved, client):
             concerns=["This product could not be evaluated."])
 
 @router.post("/evaluate", response_model=DiscoveryResponse)
-def discover(req: DiscoveryRequest):
+def discover(req: DiscoveryRequest, user: User = Depends(require_rm_role)):
     # Bound provider concurrency; one unavailable product must not hide other results.
     with ThreadPoolExecutor(max_workers=4) as pool:
         matches = list(pool.map(lambda p: evaluate_saved(p, req.client), req.products))

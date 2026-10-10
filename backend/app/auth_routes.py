@@ -5,7 +5,7 @@ import jwt
 import datetime
 import os
 from app.mail import send_personalized_verification_email
-from app.auth import SUPABASE_JWT_SECRET
+from app.auth import get_jwt_secret
 
 router = APIRouter(prefix="/auth", tags=["auth-verification"])
 
@@ -18,7 +18,8 @@ def send_verification_email(req: VerificationRequest, background_tasks: Backgrou
     """
     Generate a secure verification token and send a personalized HTML email.
     """
-    if not SUPABASE_JWT_SECRET:
+    secret = get_jwt_secret()
+    if not secret:
         raise HTTPException(status_code=500, detail="JWT Secret not configured on backend.")
 
     # Create a verification token valid for 24 hours
@@ -26,9 +27,9 @@ def send_verification_email(req: VerificationRequest, background_tasks: Backgrou
         "email": req.email,
         "name": req.name,
         "action": "verify_email",
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
     }
-    token = jwt.encode(payload, SUPABASE_JWT_SECRET, algorithm="HS256")
+    token = jwt.encode(payload, secret, algorithm="HS256")
 
     # The link points back to the frontend verification handler
     # Note: In production, change localhost to your actual domain
@@ -52,8 +53,9 @@ def verify_token(token: str):
     Validates the verification token.
     (The frontend can call this when the user clicks the link).
     """
+    secret = get_jwt_secret()
     try:
-        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
         if payload.get("action") != "verify_email":
             raise ValueError("Invalid token action")
         

@@ -18,6 +18,9 @@ import ResetPasswordPage from "./auth/pages/ResetPasswordPage";
 
 // Client Portal
 import ClientDashboard from "./pages/ClientDashboard";
+import ClientSimulator from "./pages/ClientSimulator";
+import ClientAssessmentDetail from "./pages/ClientAssessmentDetail";
+import ClientLoginPage from "./pages/ClientLoginPage";
 
 // RM Workspace Pages
 import Dashboard from "./pages/Dashboard";
@@ -70,6 +73,7 @@ export default function App() {
           <Routes>
             {/* Public Authentication Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/login/client" element={<ClientLoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -82,6 +86,26 @@ export default function App() {
                 <ProtectedRoute>
                   <RoleGuard allowedRoles={["client", "rm"]}>
                     <ClientDashboard />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/simulate"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <ClientSimulator />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/assessment/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <ClientAssessmentDetail />
                   </RoleGuard>
                 </ProtectedRoute>
               }
