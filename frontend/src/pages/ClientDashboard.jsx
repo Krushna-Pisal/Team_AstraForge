@@ -81,7 +81,43 @@ export default function ClientDashboard() {
       suitabilityTarget: "Multi-Currency Portfolios",
       badgeColor: "#d97706",
     },
+    {
+      id: "prod-options",
+      name: "Options Payoff Simulator",
+      type: "OPTIONS",
+      tenor: "1 - 12 Months",
+      underlying: "Equities, Indices (Calls / Puts)",
+      keyFeature: "Long & Short Expiry Payoffs",
+      suitabilityTarget: "All Derivative Profiles",
+      badgeColor: "#a855f7",
+      to: "/client/options",
+    },
+    {
+      id: "prod-debenture",
+      name: "Debenture Valuation & YTM",
+      type: "DEBENTURE",
+      tenor: "1 - 10 Years",
+      underlying: "Fixed Income Debentures / Bonds",
+      keyFeature: "Purchase YTM & Yield Sensitivity",
+      suitabilityTarget: "Conservative / Fixed Income",
+      badgeColor: "#059669",
+      to: "/client/debenture",
+    },
+    {
+      id: "prod-advanced",
+      name: "Cross-Product Scenario Testing",
+      type: "ADVANCED",
+      tenor: "Custom Tenors",
+      underlying: "Equities, Currencies, Indices",
+      keyFeature: "Market Shocks & Historical Replay",
+      suitabilityTarget: "Stress-Testing & Comparison",
+      badgeColor: "#38bdf8",
+      to: "/client/advanced",
+    },
   ];
+
+
+
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem" }} className="page-stack">
@@ -275,12 +311,13 @@ export default function ClientDashboard() {
 
                 <div style={{ display: "flex", gap: "8px" }}>
                   <Link
-                    to={`/client/simulate?product=${p.type}`}
+                    to={p.to || `/client/simulate?product=${p.type}`}
                     className="btn-primary"
                     style={{ flex: 1, textAlign: "center", fontSize: "0.85rem", padding: "0.55rem" }}
                   >
-                    Simulate {p.type} Payoff
+                    Simulate {p.type === "OPTIONS" ? "Options" : p.type} Payoff
                   </Link>
+
                 </div>
               </div>
             ))}

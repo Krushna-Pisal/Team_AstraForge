@@ -5,15 +5,23 @@ import {
   History,
   FileText,
   Layers,
+  TrendingUp,
+  Landmark,
+  Sliders,
 } from "lucide-react";
 const items = [
   ["/", "Overview", LayoutDashboard],
   ["/clients", "Customer details", UserRound],
   ["/simulator", "Saved products", Layers],
+  ["/simulator/advanced", "Scenario stress-testing", Sliders],
+  ["/simulator/options", "Options simulator", TrendingUp],
+  ["/simulator/debenture", "Debenture simulator", Landmark],
   ["/discovery", "Find matching products", Layers],
   ["/history", "Assessment history", History],
   ["/reports", "Reports", FileText],
 ];
+
+
 export default function AppSidebar() {
   return (
     <aside className="sidebar">
