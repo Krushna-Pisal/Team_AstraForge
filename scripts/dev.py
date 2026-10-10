@@ -12,6 +12,7 @@ import sys
 import time
 import threading
 from urllib.request import urlopen
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -116,8 +117,11 @@ def main():
                     continue
                 try:
                     with urlopen(url, timeout=1) as response:
-                        if response.status == 200:
+                        if response.status in (200, 401):
                             pending.remove(url)
+                except HTTPError as err:
+                    if err.code in (200, 401):
+                        pending.remove(url)
                 except (OSError, TimeoutError):
                     pass
             time.sleep(0.25)

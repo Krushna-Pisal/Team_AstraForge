@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from app.auth import get_current_user
 
 from app.cpn.schemas import (
     CpnProductInput,
@@ -24,7 +25,7 @@ from app.cpn.backtest import run_cpn_backtest
 from app.cpn.loss_measures import calculate_cpn_loss_measures
 from app.market_data import _CSV_PATHS
 
-router = APIRouter(prefix="/api/cpn", tags=["cpn"])
+router = APIRouter(prefix="/api/cpn", tags=["cpn"], dependencies=[Depends(get_current_user)])
 
 DEFAULT_CPN_SHOCKS = [-40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 30.0, 50.0]
 

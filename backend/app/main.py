@@ -6,6 +6,14 @@ CORS is enabled for localhost:5173 (Vite dev server).
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Ensure backend directory is on sys.path for direct uvicorn invocations
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,10 +44,12 @@ install_error_handlers(app)
 from app.discovery.discovery_service import router as discovery_router
 from app.agents.insights_agent import router as insights_router
 from app.auth_routes import router as auth_router
+from app.customer_routes import router as customer_router
 
 app.include_router(discovery_router)
 app.include_router(insights_router)
 app.include_router(auth_router)
+app.include_router(customer_router)
 
 frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 origins = [
@@ -60,7 +70,7 @@ app.add_middleware(
 CURVE_RATIO_RANGE = list(np.round(np.arange(0.20, 1.81, 0.01), 4).tolist())
 
 
-from app.auth import get_current_user, User
+from app.auth import get_current_user, require_rm_role, User
 from fastapi import Depends
 
 @app.get("/health", tags=["meta"])
@@ -98,7 +108,7 @@ def get_prices(underlying: str) -> PriceInfo:
 
 
 @app.post("/payoff", response_model=PayoffResponse, tags=["legacy"], deprecated=True)
-def compute_payoff_api(product: ProductInput) -> PayoffResponse:
+def compute_payoff_api(product: ProductInput, user: User = Depends(get_current_user)) -> PayoffResponse:
     """
     Compute the ELN payoff curve and scenario table.
 
@@ -141,17 +151,17 @@ def compute_payoff_api(product: ProductInput) -> PayoffResponse:
     )
 
 @app.post("/api/payoff/eln", response_model=ElnPayoffResponse, tags=["payoff", "phase2"])
-def compute_eln_api(req: ElnPayoffRequest) -> ElnPayoffResponse:
+def compute_eln_api(req: ElnPayoffRequest, user: User = Depends(get_current_user)) -> ElnPayoffResponse:
     """Compute ELN payoff for a specific final outcome."""
     return calculate_eln_payoff(req)
 
 @app.post("/api/payoff/dcd", response_model=DcdPayoffResponse, tags=["payoff", "phase2"])
-def compute_dcd_api(req: DcdPayoffRequest) -> DcdPayoffResponse:
+def compute_dcd_api(req: DcdPayoffRequest, user: User = Depends(get_current_user)) -> DcdPayoffResponse:
     """Compute DCD payoff for a specific final outcome."""
     return calculate_dcd_payoff(req)
 
 @app.post("/api/payoff/cpn", response_model=CpnPayoffResponse, tags=["payoff", "phase2"])
-def compute_cpn_api(req: CpnPayoffRequest) -> CpnPayoffResponse:
+def compute_cpn_api(req: CpnPayoffRequest, user: User = Depends(get_current_user)) -> CpnPayoffResponse:
     """Compute CPN payoff for a specific final outcome."""
     return calculate_cpn_payoff(req)
 
@@ -162,46 +172,46 @@ from app.phase3_market_data import get_historical_market_data
 from typing import Any
 
 @app.get("/api/market-data/history", response_model=MarketHistory, tags=["market"])
-def get_market_history(ticker: str = "^NSEI", period: str = "10y", source: str = "snapshot", refresh: bool = False) -> MarketHistory:
+def get_market_history(ticker: str = "^NSEI", period: str = "10y", source: str = "snapshot", refresh: bool = False, user: User = Depends(get_current_user)) -> MarketHistory:
     return get_market_data(ticker, period, source, refresh)
 
 
 @app.get("/api/market-data/catalog", response_model=list[MarketInstrument], tags=["market"])
-def get_market_catalog() -> list[MarketInstrument]:
+def get_market_catalog(user: User = Depends(get_current_user)) -> list[MarketInstrument]:
     return [{"ticker": key, **value} for key, value in MARKETS.items()]
 
 
 @app.get("/api/market-data/search", response_model=SearchResponse, tags=["market"])
-def search_market_symbols(q: str = "", kind: str = "equity"):
+def search_market_symbols(q: str = "", kind: str = "equity", user: User = Depends(get_current_user)):
     return search_underlyings(q, kind)
 
 
 @app.post("/api/products/validate", response_model=ValidatedProduct, tags=["products"])
-def validate_product_template(req: ProductTemplate):
+def validate_product_template(req: ProductTemplate, user: User = Depends(require_rm_role)):
     return validate_product(req)
 
 
 @app.post("/api/products/prepare", response_model=PreparedProduct, tags=["products"])
-def prepare_saved_product(req: PrepareProductRequest):
+def prepare_saved_product(req: PrepareProductRequest, user: User = Depends(require_rm_role)):
     return prepare_product(req)
 
 
 @app.post("/api/simulation/run", response_model=SimulationBundle, tags=["services"])
-def simulation_bundle(req: SimulationRequest):
+def simulation_bundle(req: SimulationRequest, user: User = Depends(get_current_user)):
     return run_simulation(req)
 
 
 @app.post("/api/suitability/evaluate", response_model=EvaluationBundle, tags=["services"])
-def evaluate_configured_product(req: EvaluateRequest):
-    return evaluate_client(req)
+def evaluate_configured_product(req: EvaluateRequest, user: User = Depends(get_current_user)):
+    return evaluate_client(req, user=user)
 
 @app.post("/api/scenarios/simulate", response_model=ScenarioResponse, tags=["simulation", "phase3"])
-def simulate_scenarios_api(req: ScenarioRequest) -> ScenarioResponse:
+def simulate_scenarios_api(req: ScenarioRequest, user: User = Depends(get_current_user)) -> ScenarioResponse:
     """Run hypothetical scenarios for a configured product."""
     return simulate_scenarios(req)
 
 @app.post("/api/backtest/run", response_model=BacktestResponse, tags=["backtest", "phase3"])
-def run_backtest_api(req: BacktestRequest) -> BacktestResponse:
+def run_backtest_api(req: BacktestRequest, user: User = Depends(get_current_user)) -> BacktestResponse:
     """Run historical rolling-window backtest on real market data paths."""
     return run_backtest(req)
 
@@ -210,7 +220,7 @@ from app.phase4_models import SuitabilityRequest, SuitabilityResponse
 from app.phase4_suitability import run_suitability_assessment
 
 @app.post("/api/suitability/check", response_model=SuitabilityResponse, tags=["suitability", "phase4"])
-def check_suitability_api(req: SuitabilityRequest) -> SuitabilityResponse:
+def check_suitability_api(req: SuitabilityRequest, user: User = Depends(get_current_user)) -> SuitabilityResponse:
     """Evaluate client suitability against product risk characteristics."""
     return run_suitability_assessment(req)
 

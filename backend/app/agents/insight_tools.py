@@ -4,8 +4,8 @@ from app.phase3_sim_models import ProductConfiguration, ScenarioRequest
 from app.phase3_simulation import simulate_scenarios
 from app.phase2_engines import calculate_eln_payoff, calculate_dcd_payoff, calculate_cpn_payoff
 
-def trusted_inputs(assessment_id):
-    record = get_record(assessment_id)
+def trusted_inputs(assessment_id, caller=None):
+    record = get_record(assessment_id, caller=caller)
     request = record["request"]
     config = ProductConfiguration.model_validate({key:request[key] for key in ("product_type","eln_config","dcd_config","cpn_config")})
     # Only deterministic services compute results. No fresh quotes change the saved contract.
