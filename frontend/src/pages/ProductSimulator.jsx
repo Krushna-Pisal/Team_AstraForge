@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LineChart, ArrowLeftRight, ShieldCheck, Trash2 } from "lucide-react";
+import { LineChart, ArrowLeftRight, ShieldCheck, Trash2, TrendingUp, Landmark, Sliders } from "lucide-react";
+
+
 import { PageTitle, Steps } from "../components/ui/Workflow";
 import { useAssessment } from "../state/AssessmentContext";
 // eslint-disable-next-line react/only-export-components
@@ -29,7 +31,35 @@ export const PRODUCTS = [
     description: "Protect an agreed portion and share in market growth.",
     terms: ["Protection applies at maturity", "Issuer default risk remains"],
   },
+  {
+    id: "options",
+    title: "Options Payoff",
+    tag: "OPTIONS",
+    icon: TrendingUp,
+    description: "Simulate European Call and Put payoffs, break-evens, and profit/loss profiles.",
+    terms: ["Expiry payoff model", "Long & short positions"],
+  },
+  {
+    id: "debenture",
+    title: "Debenture Valuation",
+    tag: "DEBENTURE",
+    icon: Landmark,
+    description: "Simulate fixed-rate bullet debenture cash flows, purchase YTM, present value and interest rate sensitivity.",
+    terms: ["Fixed periodic coupon", "Bullet redemption at maturity"],
+  },
+  {
+    id: "advanced",
+    title: "Scenario Stress-Testing",
+    tag: "ADVANCED",
+    icon: Sliders,
+    description: "Compare structured payoffs under market shocks and replay historical observation windows.",
+    terms: ["Cross-product comparison", "Historical scenario replay"],
+  },
 ];
+
+
+
+
 export default function ProductSimulator() {
   const { state, dispatch } = useAssessment();
   const navigate = useNavigate();

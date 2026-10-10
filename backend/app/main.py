@@ -15,7 +15,7 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.domain import ErrorResponse
 from app.errors import install_error_handlers
@@ -71,7 +71,6 @@ CURVE_RATIO_RANGE = list(np.round(np.arange(0.20, 1.81, 0.01), 4).tolist())
 
 
 from app.auth import get_current_user, require_rm_role, User
-from fastapi import Depends
 
 @app.get("/health", tags=["meta"])
 def health_check():
@@ -231,3 +230,18 @@ app.include_router(cpn_router)
 # --- DCD Endpoints ---
 from app.dcd.router import router as dcd_router
 app.include_router(dcd_router)
+
+# --- Options Endpoints ---
+from app.options.router import router as options_router
+app.include_router(options_router)
+
+# --- Debenture Endpoints ---
+from app.debenture.router import router as debenture_router
+app.include_router(debenture_router)
+
+# --- Advanced Simulation Endpoints ---
+from app.advanced_simulation.router import router as advanced_sim_router
+app.include_router(advanced_sim_router)
+
+
+

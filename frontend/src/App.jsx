@@ -41,6 +41,9 @@ import AssessmentHistory from "./pages/AssessmentHistory";
 import Reports from "./pages/Reports";
 import RMProfile from "./pages/RMProfile";
 import LandingPage from "./pages/LandingPage";
+import OptionsSimulator from "./pages/OptionsSimulator";
+import DebentureSimulator from "./pages/DebentureSimulator";
+import AdvancedSimulation from "./pages/AdvancedSimulation";
 
 function RootEntry() {
   const { user, role, loading } = useAuth();
@@ -110,6 +113,36 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/client/options"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <OptionsSimulator isClientPortal={true} />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/debenture"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <DebentureSimulator isClientPortal={true} />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/client/advanced"
+              element={
+                <ProtectedRoute>
+                  <RoleGuard allowedRoles={["client", "rm"]}>
+                    <AdvancedSimulation isClientPortal={true} />
+                  </RoleGuard>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected RM Workspace Routes */}
             <Route
@@ -120,9 +153,15 @@ export default function App() {
 
               <Route path="simulator">
                 <Route index element={<ProductSimulator />} />
+                <Route path="advanced" element={<AdvancedSimulation />} />
+                <Route path="options" element={<OptionsSimulator />} />
+                <Route path="debenture" element={<DebentureSimulator />} />
                 <Route path="eln" element={<ConfigureELN />} />
                 <Route path="dcd" element={<DcdConfigure />} />
                 <Route path="cpn" element={<CpnConfigure />} />
+
+
+
                 <Route path="investment" element={<Investment />} />
                 <Route path="budget" element={<InvestmentPlan />} />
                 <Route path="insights" element={<Insights />} />
