@@ -231,7 +231,7 @@ function ProductForm({ type, edit, state, dispatch, navigate }) {
             <p className="notice">
               Currency:{" "}
               {type === "DCD" ? market.instrument.deposit : market.currency} ·
-              Reference price: {market.latest_price} · Price date:{" "}
+              Reference price: {market.latest_price}{market.instrument?.unit ? ` (${market.instrument.unit})` : ""} · Price date:{" "}
               {market.end_date || market.as_of || "see data source"}. Reference
               prices are refreshed from available data for each assessment.
             </p>

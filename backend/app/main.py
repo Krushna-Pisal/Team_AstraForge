@@ -59,6 +59,13 @@ origins = [
 if frontend_url and frontend_url not in origins:
     origins.append(frontend_url)
 
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+if allowed_origins_env:
+    for o in allowed_origins_env.split(","):
+        o = o.strip()
+        if o and o not in origins:
+            origins.append(o)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
