@@ -47,7 +47,7 @@ AstraForge is a suitability-aware structured-product advisory workspace for Rela
 Open PowerShell or Command Prompt in the repository root:
 
 ```powershell
-cd D:\MindSpark\Team_AstraForge
+cd Team_AstraForge
 .\run.cmd
 ```
 
@@ -275,9 +275,15 @@ All calculations are deterministic. AI does not calculate payoffs, market events
 | `services.py` | Integrated simulation and suitability orchestration |
 | `cpn/` | CPN-specific payoff, curve, scenarios, backtest, schemas, and loss measures |
 | `dcd/` | DCD-specific payoff, curve, scenarios, backtest, schemas, and loss measures |
+| `options/` | European Options strategy simulator (Call/Put, Long/Short, Greeks, break-even) |
+| `debenture/` | Fixed-rate debenture bond engine (cash flows, present value, YTM, sensitivity) |
+| `advanced_simulation/` | Cross-product market shocks, sensitivity curves, and historical rolling replay |
 | `discovery/` | Saved-product evaluation and alignment ranking |
 | `agents/` | Trusted insight inputs, translations, fallback explanations, and optional Gemini selection |
 | `auth.py`, `auth_routes.py` | JWT user resolution, RM role protection, and verification endpoints |
+| `customer_routes.py` | Customer self-service portal endpoints with caller data isolation |
+| `assessment_records.py` | Assessment snapshot persistence with caller-isolated ownership enforcement |
+| `config_validator.py` | Production configuration validator checking secrets, dev bypass, and CORS |
 
 ## Core API groups
 
@@ -287,6 +293,9 @@ Interactive request and response schemas are available at `/docs`.
 |---|---|
 | Health and identity | `GET /health`, `GET /me` |
 | Payoff engines | `POST /api/payoff/eln`, `/api/payoff/dcd`, `/api/payoff/cpn` |
+| Options simulator | `POST /api/options/simulate` |
+| Debenture simulator | `POST /api/debenture/simulate` |
+| Advanced simulation | `POST /api/advanced-simulation/market-shocks`, `/sensitivity`, `/historical-scenarios` |
 | Market data | `GET /api/market-data/catalog`, `/search`, `/history` |
 | Product library | `POST /api/products/validate`, `/api/products/prepare` |
 | Integrated simulation | `POST /api/simulation/run` |
@@ -294,6 +303,7 @@ Interactive request and response schemas are available at `/docs`.
 | Suitability | `POST /api/suitability/check`, `/api/suitability/evaluate` |
 | Discovery | `POST /api/discovery/evaluate` |
 | Insights | `POST /api/insights/generate` |
+| Customer portal | `GET /api/customer/profile`, `/products`, `/assessments`, `POST /api/customer/simulate` |
 | CPN detail APIs | `GET /api/cpn/underlyings`; payoff, curve, scenarios, backtest, and loss-measure POST routes |
 | DCD detail APIs | `GET /api/dcd/pairs`; payoff, curve, scenarios, backtest, and loss-measure POST routes |
 | Authentication support | `POST /auth/send-verification`, `/auth/verify-token` |
@@ -320,34 +330,40 @@ Detailed financial contracts are documented in [API contracts](docs/API_CONTRACT
 Team_AstraForge/
 |-- backend/
 |   |-- app/
-|   |   |-- agents/          # Grounded insight generation and translations
-|   |   |-- cpn/             # Capital-Protected Note domain
-|   |   |-- dcd/             # Dual Currency Deposit domain
-|   |   |-- discovery/       # Product matching
-|   |   |-- main.py          # FastAPI entry point
-|   |   |-- services.py      # Integrated orchestration
-|   |   `-- phase*.py        # Payoff, simulation, market, and suitability layers
-|   |-- data/                # Bundled market snapshots
-|   |-- scripts/             # Data refresh utility
-|   |-- tests/               # Backend unit and API tests
+|   |   |-- agents/              # Grounded insight generation and translations
+|   |   |-- cpn/                 # Capital-Protected Note domain
+|   |   |-- dcd/                 # Dual Currency Deposit domain
+|   |   |-- options/             # European options strategy simulator
+|   |   |-- debenture/           # Fixed-rate debenture bond engine
+|   |   |-- advanced_simulation/ # Market shocks & historical replay
+|   |   |-- discovery/           # Product matching
+|   |   |-- main.py              # FastAPI entry point
+|   |   |-- services.py          # Integrated orchestration
+|   |   |-- customer_routes.py   # Customer portal endpoints
+|   |   |-- assessment_records.py# Caller data isolation
+|   |   |-- config_validator.py  # Production configuration validator
+|   |   `-- phase*.py            # Payoff, simulation, market, and suitability layers
+|   |-- data/                    # Bundled market snapshots
+|   |-- scripts/                 # Data refresh utility
+|   |-- tests/                   # Backend unit, security, and API tests
 |   `-- requirements.txt
 |-- frontend/
-|   |-- e2e/                 # Playwright workflow tests
-|   |-- public/              # Logo, icons, and fonts
+|   |-- e2e/                     # Playwright workflow tests
+|   |-- public/                  # Logo, icons, and fonts
 |   |-- src/
-|   |   |-- auth/            # Authentication and route protection
-|   |   |-- components/      # Shared and product-specific UI
-|   |   |-- pages/           # Route-level screens
-|   |   |-- state/           # Assessment session state
-|   |   |-- lib/             # API client
-|   |   `-- App.jsx          # Route map
+|   |   |-- auth/                # Authentication and route protection
+|   |   |-- components/          # Shared and product-specific UI
+|   |   |-- pages/               # Route-level screens
+|   |   |-- state/               # Assessment session state
+|   |   |-- lib/                 # API client
+|   |   `-- App.jsx              # Route map
 |   |-- package.json
 |   `-- vite.config.js
-|-- docs/                    # Architecture, contracts, schema, and validation notes
-|-- scripts/dev.py           # Cross-platform development supervisor
-|-- run.cmd                  # Windows command entry point
-|-- run.ps1                  # Windows bootstrap
-|-- run.sh                   # Bash entry point
+|-- docs/                        # Architecture, contracts, schema, and validation notes
+|-- scripts/dev.py               # Cross-platform development supervisor
+|-- run.cmd                      # Windows command entry point
+|-- run.ps1                      # Windows bootstrap
+|-- run.sh                       # Bash entry point
 `-- README.md
 ```
 
