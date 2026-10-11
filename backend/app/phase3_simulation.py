@@ -64,8 +64,8 @@ def run_backtest(req: BacktestRequest) -> BacktestResponse:
     if req.product_type == "DCD":
         if market.get("deposit") != cfg.deposit_currency or market.get("alternate") != cfg.alternate_currency:
             raise DomainError("FX_PAIR_MISMATCH", "Historical FX quote must be alternate units per deposit currency unit.")
-    elif market["kind"] != "equity":
-        raise DomainError("UNDERLYING_MISMATCH", "ELN and CPN require an equity underlying.")
+    elif market["kind"] not in ("equity", "commodity"):
+        raise DomainError("UNDERLYING_MISMATCH", "ELN and CPN require an equity or commodity underlying.")
     df = clean_prices(get_historical_market_data(req.ticker))
     source = df.attrs.get("source", "Provided historical observations")
     if req.start_date:
@@ -73,9 +73,10 @@ def run_backtest(req: BacktestRequest) -> BacktestResponse:
     if req.end_date:
         df = df[df["date"] <= req.end_date.isoformat()]
     df = df.reset_index(drop=True)
+    obs_count = len(df)
     intervals = max(1, ceil(cfg.tenor_years * 252))
-    if len(df) <= intervals:
-        raise DomainError("INSUFFICIENT_HISTORY", f"Need {intervals + 1} observations for this tenor; only {len(df)} are available.")
+    if obs_count <= intervals:
+        raise DomainError("INSUFFICIENT_HISTORY", f"Need {intervals + 1} observations for this tenor; only {obs_count} are available.")
     windows = []
     for i in range(len(df) - intervals):
         path = df["close"].iloc[i:i + intervals + 1].tolist()
@@ -96,6 +97,11 @@ def run_backtest(req: BacktestRequest) -> BacktestResponse:
         barrier_breaches=breaches if req.product_type == "ELN" else None,
         barrier_breach_freq_pct=breaches / total * 100 if req.product_type == "ELN" else None,
         conversion_frequency_pct=sum(w.conversion_occurred is True for w in windows) / total * 100 if req.product_type == "DCD" else None)
+    backtest_warnings = []
+    if "snapshot" in source.lower():
+        backtest_warnings.append("Bundled snapshot data; provenance not independently verified.")
+    date_range_str = f"{df['date'].iloc[0]} to {df['date'].iloc[-1]}" if obs_count > 0 else ""
     return BacktestResponse(ticker=req.ticker, product_type=req.product_type, windows=windows, metrics=metrics,
         data_source=source, data_as_of=df["date"].iloc[-1], value_currency=cfg.deposit_currency if req.product_type == "DCD" else cfg.investment_currency,
-        assumptions=f"Historical simulation using {intervals} trading intervals ({intervals + 1} closing observations) per window; 252 intervals/year approximates tenor. Daily barriers use only each window's full path. DCD strike/initial ratio is held constant. Overlapping windows are not independent. Not a prediction; no fees, taxes, issuer default or intraday lows.")
+        assumptions=f"Historical simulation using {intervals} trading intervals ({intervals + 1} closing observations) per window; 252 intervals/year approximates tenor. Daily barriers use only each window's full path. DCD strike/initial ratio is held constant. Overlapping windows are not independent. Not a prediction; no fees, taxes, issuer default or intraday lows.",
+        observations_count=obs_count, date_range=date_range_str, warnings=backtest_warnings)

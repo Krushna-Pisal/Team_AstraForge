@@ -84,8 +84,8 @@ def validate_product(template: ProductTemplate) -> ValidatedProduct:
     if template.product_type == "DCD":
         if instrument.kind != "fx" or template.currency != instrument.deposit:
             raise DomainError("CURRENCY_MISMATCH", "The product currency must be the first currency in the selected pair.")
-    elif instrument.kind != "equity":
-        raise DomainError("UNDERLYING_MISMATCH", "Choose a stock, index or ETF.")
+    elif instrument.kind not in ("equity", "commodity"):
+        raise DomainError("UNDERLYING_MISMATCH", "Choose a stock, index, ETF or supported commodity.")
     elif template.currency != instrument.currency:
         raise DomainError("CURRENCY_MISMATCH", "Use the underlying's currency for this product. Automatic currency conversion is not supported.")
     return ValidatedProduct(template=template, instrument=instrument)

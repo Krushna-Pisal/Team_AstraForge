@@ -112,3 +112,6 @@ class BacktestResponse(DomainModel):
     data_as_of: str
     value_currency: str
     assumptions: str
+    observations_count: int | None = None
+    date_range: str | None = None
+    warnings: list[str] = []

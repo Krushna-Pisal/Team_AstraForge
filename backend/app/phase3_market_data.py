@@ -13,9 +13,21 @@ from app.domain import DomainError, DomainModel, Currency
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "NIFTY50.csv"
 MARKETS = {
     "^NSEI": {"label": "NIFTY 50", "currency": "INR", "kind": "equity"},
+    "GC=F": {"label": "Gold (XAU/USD)", "currency": "USD", "kind": "commodity", "unit": "USD/oz"},
+    "SI=F": {"label": "Silver (XAG/USD)", "currency": "USD", "kind": "commodity", "unit": "USD/oz"},
     "USDINR=X": {"label": "USD / INR", "currency": "INR", "kind": "fx", "deposit": "USD", "alternate": "INR"},
     "EURUSD=X": {"label": "EUR / USD", "currency": "USD", "kind": "fx", "deposit": "EUR", "alternate": "USD"},
     "GBPUSD=X": {"label": "GBP / USD", "currency": "USD", "kind": "fx", "deposit": "GBP", "alternate": "USD"},
+}
+COMMODITY_ALIASES = {
+    "XAUUSD=X": "GC=F",
+    "XAU/USD": "GC=F",
+    "XAUUSD": "GC=F",
+    "GOLD": "GC=F",
+    "XAGUSD=X": "SI=F",
+    "XAG/USD": "SI=F",
+    "XAGUSD": "SI=F",
+    "SILVER": "SI=F",
 }
 PERIODS = {"1mo": 31, "1y": 366, "5y": 1830, "10y": 3660}
 
@@ -24,9 +36,10 @@ class MarketInstrument(DomainModel):
     ticker: str
     label: str
     currency: Currency
-    kind: Literal["equity", "fx"]
+    kind: Literal["equity", "fx", "commodity"]
     deposit: Currency | None = None
     alternate: Currency | None = None
+    unit: str | None = None
 
 
 class PricePoint(DomainModel):
@@ -51,8 +64,9 @@ class MarketHistory(DomainModel):
 class SearchResult(DomainModel):
     ticker: str
     label: str
-    kind: Literal["equity", "fx"]
+    kind: Literal["equity", "fx", "commodity"]
     exchange: str = ""
+    unit: str | None = None
 
 
 class SearchResponse(DomainModel):
@@ -62,6 +76,8 @@ class SearchResponse(DomainModel):
 
 def validate_ticker(ticker: str) -> str:
     ticker = ticker.strip().upper()
+    if ticker in COMMODITY_ALIASES:
+        ticker = COMMODITY_ALIASES[ticker]
     if not re.fullmatch(r"[A-Z0-9^][A-Z0-9.^=\-]{0,31}", ticker):
         raise DomainError("UNSUPPORTED_TICKER", "Choose a valid symbol from the underlying search.")
     return ticker
@@ -88,18 +104,34 @@ def _search_yahoo(query: str, cache_hour: int):
 
 
 def search_underlyings(query: str = "", kind: str = "equity") -> SearchResponse:
-    if kind not in ("equity", "fx"):
-        raise DomainError("INVALID_MARKET_TYPE", "Choose equities or currency pairs.")
+    if kind not in ("equity", "fx", "commodity"):
+        raise DomainError("INVALID_MARKET_TYPE", "Choose equities, commodities or currency pairs.")
     query = query.strip()
     if len(query) > 80:
         raise DomainError("INVALID_SEARCH", "Use a shorter company name or symbol.")
     results = {}
-    # The bundled catalog is explicitly a starting list, not Yahoo's full universe.
+    allowed_kinds = ("equity", "commodity") if kind in ("equity", "commodity") else (kind,)
     for ticker, entry in MARKETS.items():
-        if entry["kind"] == kind and (not query or query.lower() in (ticker + entry["label"]).lower()):
-            results[ticker] = SearchResult(ticker=ticker, label=entry["label"], kind=kind)
+        if entry["kind"] in allowed_kinds and (not query or query.lower() in (ticker + entry["label"]).lower()):
+            results[ticker] = SearchResult(
+                ticker=ticker,
+                label=entry["label"],
+                kind=entry["kind"],
+                unit=entry.get("unit"),
+            )
     warning = None
     if query:
+        norm_q = query.upper().replace(" ", "")
+        if norm_q in COMMODITY_ALIASES:
+            alias_ticker = COMMODITY_ALIASES[norm_q]
+            if alias_ticker in MARKETS and MARKETS[alias_ticker]["kind"] in allowed_kinds:
+                entry = MARKETS[alias_ticker]
+                results[alias_ticker] = SearchResult(
+                    ticker=alias_ticker,
+                    label=entry["label"],
+                    kind=entry["kind"],
+                    unit=entry.get("unit"),
+                )
         try:
             quotes = _search_yahoo(query, int(datetime.now(timezone.utc).timestamp() // 3600))
             for quote in quotes:
@@ -107,10 +139,22 @@ def search_underlyings(query: str = "", kind: str = "equity") -> SearchResponse:
                 quote_type = quote.get("quoteType")
                 if not re.fullmatch(r"[A-Z0-9^][A-Z0-9.^=\-]{0,31}", ticker):
                     continue
-                allowed = quote_type in ("EQUITY", "INDEX", "ETF") if kind == "equity" else quote_type == "CURRENCY" and fx_currencies(ticker) is not None
+                allowed = (
+                    quote_type in ("EQUITY", "INDEX", "ETF")
+                    if kind == "equity"
+                    else (
+                        quote_type == "CURRENCY" and fx_currencies(ticker) is not None
+                        if kind == "fx"
+                        else quote_type in ("FUTURE", "COMMODITY")
+                    )
+                )
                 if allowed:
-                    results[ticker] = SearchResult(ticker=ticker, label=quote.get("shortname") or quote.get("longname") or ticker,
-                        kind=kind, exchange=quote.get("exchDisp") or quote.get("exchange") or "")
+                    results[ticker] = SearchResult(
+                        ticker=ticker,
+                        label=quote.get("shortname") or quote.get("longname") or ticker,
+                        kind=kind,
+                        exchange=quote.get("exchDisp") or quote.get("exchange") or "",
+                    )
         except DomainError:
             if not results:
                 raise
@@ -133,10 +177,21 @@ def _resolve_instrument(ticker: str, cache_hour: int) -> MarketInstrument:
             raise DomainError("UNSUPPORTED_CURRENCY", "This underlying uses a currency or quote unit not supported by the simulator.")
         return MarketInstrument(ticker=ticker, label=metadata.get("longName") or metadata.get("shortName") or ticker,
             currency=currency, kind="equity")
+    if kind in ("FUTURE", "COMMODITY"):
+        currency = metadata.get("currency")
+        if currency not in get_args(Currency):
+            raise DomainError("UNSUPPORTED_CURRENCY", "This underlying uses a currency or quote unit not supported by the simulator.")
+        return MarketInstrument(
+            ticker=ticker,
+            label=metadata.get("longName") or metadata.get("shortName") or ticker,
+            currency=currency,
+            kind="commodity",
+            unit="USD/oz" if ticker in ("GC=F", "SI=F") else metadata.get("financialCurrency"),
+        )
     pair = fx_currencies(ticker)
     if kind == "CURRENCY" and pair:
         return MarketInstrument(ticker=ticker, label=" / ".join(pair), currency=pair[1], kind="fx", deposit=pair[0], alternate=pair[1])
-    raise DomainError("UNSUPPORTED_TICKER", "Choose a stock, index, ETF or supported currency pair. Other asset types are not supported.")
+    raise DomainError("UNSUPPORTED_TICKER", "Choose a stock, index, ETF, supported commodity or currency pair. Other asset types are not supported.")
 
 
 def get_instrument(ticker: str) -> MarketInstrument:
@@ -219,7 +274,7 @@ def get_market_data(ticker: str = "^NSEI", period: str = "10y", source: str = "s
     if effective_source == "snapshot" and ticker != "^NSEI":
         effective_source = "online"
     df = get_historical_market_data(ticker, period, effective_source, refresh)
-    warnings = ["Daily close observations only; prices are not live executable quotes."]
+    warnings = ["Daily close observations only; prices are delayed historical observations, not guaranteed real-time or executable quotes."]
     status = df.attrs.get("cache_status", "snapshot")
     if status == "stale":
         warnings.append("Live market data unavailable. Showing cached data from " + df["date"].iloc[-1] + ".")
@@ -227,6 +282,8 @@ def get_market_data(ticker: str = "^NSEI", period: str = "10y", source: str = "s
         warnings.append("Showing cached Yahoo observations; use Refresh market data to request an update.")
     if effective_source == "snapshot":
         warnings.append("Bundled snapshot; original provenance is unverified. Do not treat it as a live market feed.")
+    if instrument.kind == "commodity" and instrument.unit:
+        warnings.append(f"Commodity contract quote units: {instrument.unit} ({instrument.currency}).")
     return MarketHistory(ticker=ticker, source=df.attrs["source"], as_of=df["date"].iloc[-1],
         fetched_at=df.attrs["fetched_at"], count=len(df), latest_price=float(df["close"].iloc[-1]),
         currency=instrument.currency, instrument=instrument, warnings=warnings, prices=df.to_dict("records"), cache_status=status)

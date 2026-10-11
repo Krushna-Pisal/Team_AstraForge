@@ -8,17 +8,17 @@ AstraForge is a suitability-aware structured-product advisory workspace for Rela
 
 ## What the project provides
 
-- Product configuration for Equity-Linked Notes (ELN), Dual Currency Deposits (DCD), and Capital-Protected Notes (CPN).
-- Deterministic payoff calculations and payoff curves.
-- Standard and custom market-shock scenarios.
-- Historical rolling-window backtests using bundled or Yahoo Finance market data.
-- Client profiling across risk appetite, objective, horizon, loss tolerance, liquidity, and concentration.
-- Rule-based suitability results with `PASS`, `WARNING`, and `MISMATCH` outcomes.
-- Product discovery against products saved in the current browser session.
-- RM and client explanation views, with deterministic fallback content and optional Gemini enhancement.
-- English, Hindi, and Marathi client PDF reports.
-- Supabase authentication support, with a local development fallback when Supabase is not configured.
-- Responsive RM workspace, assessment history, reports, and profile management.
+- **Structured Product Suites**: Configuration and deterministic payoff calculations for Equity-Linked Notes (ELN), Dual Currency Deposits (DCD), and Capital-Protected Notes (CPN).
+- **Fixed Income**: Debenture simulator evaluating bullet bonds, cash-flow schedules, Yield-to-Maturity (YTM), and yield sensitivity.
+- **Derivative Strategies**: European Options simulator supporting Long/Short Call and Put payoffs, break-evens, and scenario shock tables.
+- **Advanced Simulation Workbench**: Cross-product shock comparison matrices, dense sensitivity curves, and rolling historical scenario replay.
+- **Supported Underlyings**: Verified support for Equity Indices (NIFTY 50), Equities/ETFs (`AAPL`, `RELIANCE.NS`), FX Pairs (`USD/INR`, `EUR/USD`), and Commodities (Gold `GC=F` and Silver `SI=F` in USD/oz).
+- **Client Suitability Engine**: Multi-dimensional client profiling across risk appetite, objective, horizon, loss tolerance, liquidity, and portfolio concentration with `PASS`, `WARNING`, and `MISMATCH` audit verdicts.
+- **Product Discovery**: Deterministic matching of client profiles against saved catalog products.
+- **Dual Perspective Explanations**: RM technical analysis and client plain-language explanations with deterministic fallback and optional Google Gemini AI enhancement.
+- **Multilingual Client Reports**: Exportable client PDF reports in English, Hindi, and Marathi via `@react-pdf/renderer`.
+- **Role-Based Portals**: Dedicated portals for Relationship Managers (RM) and Customer self-service.
+- **Production Readiness & Validator**: Built-in production configuration validator (`config_validator.py`) safeguarding JWT secret strength, dev bypass isolation, and CORS origins.
 
 ## Technology stack
 
@@ -235,22 +235,31 @@ All calculations are deterministic. AI does not calculate payoffs, market events
 | Route | Purpose |
 |---|---|
 | `/` | Public landing page or authenticated RM overview |
-| `/login`, `/signup` | Authentication |
+| `/login`, `/signup` | RM authentication |
 | `/verify-email`, `/forgot-password`, `/reset-password` | Account recovery and verification |
-| `/clients` | Customer profile capture |
-| `/simulator` | Saved products and product creation |
-| `/simulator/eln` | ELN configuration |
-| `/simulator/dcd` | DCD configuration |
-| `/simulator/cpn` | CPN configuration |
-| `/simulator/budget` | Investment amount and currency |
-| `/simulator/results` | Payoff, scenario, and historical results |
-| `/simulator/suitability` | Customer-product suitability |
-| `/simulator/insights` | RM and client explanations |
-| `/discovery` | Match saved products to the active customer |
-| `/history` | Session assessment history |
-| `/reports` | Downloadable client reports |
-| `/profile` | RM profile |
-| `/client` | Protected client portal |
+| `/dashboard` | RM operational overview & summary metrics |
+| `/clients` | Customer profile capture & suitability criteria |
+| `/simulator` | Structured products workbench (ELN, DCD, CPN) |
+| `/advanced-simulation` | Market-shock matrix, dense sensitivity curves & historical replay |
+| `/options` | European options strategy simulator (Long/Short Calls & Puts) |
+| `/debenture` | Fixed-rate debenture bond valuation & cash-flow engine |
+| `/discovery` | Suitability-based product catalog discovery |
+| `/history` | Session assessment history & audit logs |
+| `/reports` | Multilingual client PDF reports (English, Hindi, Marathi) |
+| `/profile` | Relationship Manager profile & preferences |
+| `/client-login` | Customer Portal authentication |
+| `/client-dashboard` | Customer personal portfolio & exploration overview |
+| `/client-simulator` | Customer self-service simulation & suitability check |
+| `/client-profile` | Customer profile & risk tolerance settings |
+
+## Supported underlying assets
+
+| Asset Class | Symbols / Identifiers | Source | Currency / Quote Unit | Notes |
+|---|---|---|---|---|
+| **Equity Index** | `^NSEI` (NIFTY 50) | Bundled Snapshot & Yahoo Finance | INR | Core benchmark; bundled historical daily closes included in repository |
+| **Equities / ETFs** | `AAPL`, `RELIANCE.NS`, `SPY`, etc. | Yahoo Finance (`yfinance`) | USD, INR, EUR, etc. | Daily closing prices across global exchanges supported by Yahoo |
+| **FX Currency Pairs** | `USDINR=X`, `EURUSD=X`, `GBPUSD=X` | Yahoo Finance (`yfinance`) | Base / Alternate | Used for Dual Currency Deposits (DCD); strict deposit/alternate parity |
+| **Commodities** | `GC=F` (Gold), `SI=F` (Silver) | Yahoo Finance (`yfinance`) | USD / oz | Continuous COMEX futures; aliases `XAU/USD`, `XAUUSD=X`, `GOLD`, `XAG/USD`, `SILVER` resolve automatically |
 
 ## Backend modules
 
@@ -372,6 +381,72 @@ npm run test:e2e
 ```
 
 See [validation notes](docs/VALIDATION.md) for coverage and known constraints.
+
+## Production deployment & release preparation
+
+### 1. Production configuration validator
+
+Before releasing or deploying to staging or production, execute the automated configuration validator:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.config_validator
+```
+
+The validator verifies:
+- `ENVIRONMENT=production` is paired with an authentic, non-placeholder `SUPABASE_JWT_SECRET` (minimum 32 characters).
+- `ALLOW_DEV_AUTH_BYPASS` is strictly disabled.
+- Production CORS origins (`FRONTEND_URL`, `ALLOWED_ORIGINS`) do not expose localhost or loopback interfaces.
+- Gemini API key status (advises if deterministic fallback is active).
+
+### 2. Frontend production build
+
+```powershell
+cd frontend
+npm run build
+```
+
+This compiles optimized assets into `frontend/dist/`. For frontend-only hosting platforms (e.g. Vercel, Netlify, Cloudflare Pages), configure:
+- **Build command**: `npm run build`
+- **Output directory**: `dist`
+- **Environment variables**:
+  - `VITE_API_BASE_URL=https://api.yourdomain.com` (points to the hosted backend API)
+  - `VITE_SUPABASE_URL=https://your-project.supabase.co`
+  - `VITE_SUPABASE_ANON_KEY=<your-supabase-public-anon-key>`
+
+### 3. Backend production execution
+
+Run the FastAPI application with Uvicorn or Gunicorn behind a reverse proxy (e.g., Nginx, Caddy, AWS ALB):
+
+```powershell
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+Set the following production environment variables:
+- `ENVIRONMENT=production`
+- `SUPABASE_JWT_SECRET=<32+ char secret from Supabase API settings>`
+- `FRONTEND_URL=https://app.yourdomain.com`
+- `ALLOWED_ORIGINS=https://app.yourdomain.com,https://staging.yourdomain.com`
+- `ALLOW_DEV_AUTH_BYPASS=false`
+- Optional: `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-3.8-flash`
+
+## Demonstration workflow
+
+1. **Launch Workspace**:
+   Run `.\run.cmd` (Windows) or `bash run.sh` (macOS/Linux). Both servers start with live logs.
+2. **Relationship Manager (RM) Advisory Flow**:
+   - Navigate to `http://localhost:5173/login` and log in as RM (or click development quick-access).
+   - Go to `/simulator` and configure a Capital-Protected Note (CPN) or Equity-Linked Note (ELN).
+   - Test diverse asset underlyings: Select NIFTY 50 (`^NSEI`), an equity (e.g. `AAPL`), or a commodity like Gold (`GC=F`).
+   - Navigate to `/advanced-simulation` to inspect the Multi-Product Shock Comparison Matrix and Historical Rolling Replay.
+   - Run a Client Suitability Check (`/clients` -> `/simulator/suitability`) to view the 6-dimension compliance evaluation (`PASS`, `WARNING`, `MISMATCH`).
+   - Go to `/reports` and export a client-ready term sheet PDF in English, Hindi, or Marathi.
+3. **Customer Self-Service Portal Flow**:
+   - Navigate to `/client-login` and log in as a Client.
+   - View the personalized portfolio overview at `/client-dashboard`.
+   - Run a self-service simulation on `/client-simulator` to explore downside protection and upside potential.
+   - Access saved assessment records on `/client-dashboard` with strict caller data ownership.
+4. **Production Configuration Audit**:
+   - Run `python -m app.config_validator` to verify production environment boundaries and secret readiness.
 
 ## Financial and technical limitations
 

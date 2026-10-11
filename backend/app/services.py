@@ -22,8 +22,8 @@ class SimulationRequest(ProductConfiguration):
         if self.product_type == "DCD":
             if market.get("deposit") != self.config.deposit_currency or market.get("alternate") != self.config.alternate_currency:
                 raise ValueError("FX ticker must match deposit/alternate currency quote convention.")
-        elif market["kind"] != "equity":
-            raise ValueError("ELN and CPN require an equity underlying.")
+        elif market["kind"] not in ("equity", "commodity"):
+            raise ValueError("ELN and CPN require an equity or commodity underlying.")
         return self
 
 
@@ -131,5 +131,5 @@ def validate_product_market(req):
     if req.product_type == "DCD":
         if market.deposit != req.config.deposit_currency or market.alternate != req.config.alternate_currency:
             raise DomainError("FX_PAIR_MISMATCH", "The currency pair must match the saved product.")
-    elif market.kind != "equity":
-        raise DomainError("UNDERLYING_MISMATCH", "Choose a stock, index or ETF for this product.")
+    elif market.kind not in ("equity", "commodity"):
+        raise DomainError("UNDERLYING_MISMATCH", "Choose a stock, index, ETF or supported commodity for this product.")
